@@ -327,12 +327,51 @@ try {
   }
 
   /* ================= 表单 ================= */
+  /* ================= 时间工具 ================= */
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function parseDT(v) {
+    var m = /(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/.exec(String(v || ''));
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+  }
+
+  function fmtD(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+  /* "2026-11-20 09:00" → "2026-11-20T09:00"（给 datetime-local 用） */
+  function toLocalInput(v) {
+    var d = parseDT(v);
+    if (!d) return '';
+    return fmtD(d) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+
+  /* "2026-11-20T09:00" → "2026-11-20 09:00" */
+  function fromLocalInput(v) {
+    if (!v) return '';
+    return String(v).replace('T', ' ');
+  }
+
+  /* 毫秒 → "2天" / "1天4小时" / "4小时" / "30分钟" */
+  function fmtDuration(ms) {
+    if (!ms || ms <= 0) return '0';
+    var d = Math.floor(ms / 86400000);
+    var h = Math.round((ms % 86400000) / 3600000);
+    if (h >= 24) { d += 1; h = 0; }
+    if (d && h) return d + '天' + h + '小时';
+    if (d) return d + '天';
+    if (h) return h + '小时';
+    return Math.max(1, Math.round(ms / 60000)) + '分钟';
+  }
+
   function openForm(editItem) {
     var mask = document.createElement('div');
-    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;' +
+      'display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
     var it = editItem || {};
     var box = document.createElement('div');
-    box.style.cssText = 'background:#fff;border-radius:14px;width:86%;max-width:330px;padding:22px;box-sizing:border-box;';
+    box.style.cssText = 'background:#fff;border-radius:14px;width:100%;max-width:340px;' +
+      'padding:20px;box-sizing:border-box;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+
     var idTip = '';
     if (editItem && editItem.cardNo) {
       var isOrigCard = String(editItem.cardNo) === 'orig';
@@ -344,38 +383,109 @@ try {
         '<div style="font-size:11px;color:#9aa9b5;margin-top:6px;">' + fileTip + '</div>' +
         '</div>';
     }
+
+    /* 老数据没有 start 字段：按「结束时间 − 2天」给个默认值 */
+    var defStart = it.start || '';
+    if (!defStart) {
+      var e0 = parseDT(it.end || '');
+      defStart = e0 ? (fmtD(new Date(e0.getTime() - 2 * 86400000)) + ' 08:00') : '2026-11-02 08:00';
+    }
+    var defEnd    = it.end    || '2026-11-04 18:00';
+    var defName   = it.name   || '中职学生请假流程';
+    var defReason = it.reason || '';
+    var defResult = it.result || '已完成';
+
+    var FS = 'width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;';
+    var LS = 'font-size:13px;color:#738592;margin-bottom:6px;';
+    var GS = 'margin-bottom:14px;';
+
     box.innerHTML =
-      '<div style="font-size:18px;font-weight:600;text-align:center;margin-bottom:18px;color:#111;">' + (editItem ? '修改请假流程' : '添加请假流程') + '</div>' +
+      '<div style="font-size:18px;font-weight:600;text-align:center;margin-bottom:16px;color:#111;">' +
+        (editItem ? '修改请假流程' : '添加请假流程') + '</div>' +
       idTip +
-      '<div style="margin-bottom:14px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">名称</div><input id="__af_name" type="text" value="' + (it.name || '中职学生请假流程') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
-      '<div style="margin-bottom:14px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">完结时间</div><input id="__af_end" type="text" value="' + (it.end || '2026-11-05 10:00') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
-      '<div style="margin-bottom:18px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">总耗时</div><input id="__af_cost" type="text" value="' + (it.cost || '2天') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
-      '<div style="display:flex;gap:10px;"><button id="__af_cancel" style="flex:1;height:42px;border:none;border-radius:8px;background:#f0f0f0;font-size:15px;">取消</button><button id="__af_ok" style="flex:1;height:42px;border:none;border-radius:8px;background:#4A79EF;color:#fff;font-size:15px;">确定</button></div>';
+      '<div style="' + GS + '"><div style="' + LS + '">名称</div>' +
+        '<input id="__af_name" type="text" value="' + defName + '" style="' + FS + '"></div>' +
+      '<div style="' + GS + '"><div style="' + LS + '">请假开始时间</div>' +
+        '<input id="__af_start" type="datetime-local" value="' + toLocalInput(defStart) + '" style="' + FS + '"></div>' +
+      '<div style="' + GS + '"><div style="' + LS + '">请假结束时间</div>' +
+        '<input id="__af_end" type="datetime-local" value="' + toLocalInput(defEnd) + '" style="' + FS + '"></div>' +
+      '<div style="' + GS + '"><div style="' + LS + '">总耗时（自动计算）</div>' +
+        '<div id="__af_cost_view" style="' + FS + 'background:#f5f7fa;color:#4A79EF;font-weight:500;">—</div></div>' +
+      '<div style="' + GS + '"><div style="' + LS + '">请假原因</div>' +
+        '<input id="__af_reason" type="text" value="' + defReason + '" placeholder="如：感冒发烧" style="' + FS + '"></div>' +
+      '<div style="' + GS + '"><div style="' + LS + '">申请结果</div>' +
+        '<select id="__af_result" style="' + FS + '">' +
+          '<option value="已完成">已完成</option>' +
+          '<option value="审批中">审批中</option>' +
+          '<option value="已驳回">已驳回</option>' +
+        '</select></div>' +
+      '<div style="display:flex;gap:10px;margin-top:4px;">' +
+        '<button id="__af_cancel" style="flex:1;height:44px;border:none;border-radius:8px;background:#f0f0f0;font-size:15px;">取消</button>' +
+        '<button id="__af_ok" style="flex:1;height:44px;border:none;border-radius:8px;background:#4A79EF;color:#fff;font-size:15px;">确定</button></div>';
+
     mask.appendChild(box);
     document.body.appendChild(mask);
+
+    var startIn  = box.querySelector('#__af_start');
+    var endIn    = box.querySelector('#__af_end');
+    var costView = box.querySelector('#__af_cost_view');
+    var resultSel = box.querySelector('#__af_result');
+    if (resultSel) resultSel.value = defResult;
+
+    function updateCost() {
+      var sT = parseDT(fromLocalInput(startIn.value));
+      var eT = parseDT(fromLocalInput(endIn.value));
+      if (!sT || !eT) { costView.textContent = '—'; costView.style.color = '#4A79EF'; return; }
+      if (eT <= sT) {
+        costView.textContent = '结束时间要晚于开始时间';
+        costView.style.color = '#E24B4A';
+        return;
+      }
+      costView.style.color = '#4A79EF';
+      costView.textContent = fmtDuration(eT - sT);
+    }
+    startIn.oninput = updateCost; startIn.onchange = updateCost;
+    endIn.oninput = updateCost;   endIn.onchange = updateCost;
+    updateCost();
+
     box.querySelector('#__af_cancel').onclick = function () { mask.remove(); };
     box.querySelector('#__af_ok').onclick = function () {
-      var name = box.querySelector('#__af_name').value.trim() || '中职学生请假流程';
-      var end = box.querySelector('#__af_end').value.trim() || '2026-11-05 10:00';
-      var cost = box.querySelector('#__af_cost').value.trim() || '2天';
+      var name   = box.querySelector('#__af_name').value.trim() || '中职学生请假流程';
+      var start  = fromLocalInput(startIn.value);
+      var end    = fromLocalInput(endIn.value);
+      var sT     = parseDT(start);
+      var eT     = parseDT(end);
+      if (!sT || !eT) { toast('请选择开始和结束时间'); return; }
+      if (eT <= sT)   { toast('结束时间要晚于开始时间'); return; }
+
+      var cost   = fmtDuration(eT - sT);   /* 耗时一律算，不准手填 */
+      var reason = box.querySelector('#__af_reason').value.trim();
+      var result = resultSel.value || '已完成';
+      var rec = { name: name, start: start, end: end, cost: cost, reason: reason, result: result };
+
       var arr = getFlows();
       if (editItem && editItem.id) {
-        for (var i = 0; i < arr.length; i++) if (arr[i].id === editItem.id) { arr[i].name = name; arr[i].end = end; arr[i].cost = cost; }
+        for (var i = 0; i < arr.length; i++) if (arr[i].id === editItem.id) {
+          arr[i].name = name; arr[i].start = start; arr[i].end = end;
+          arr[i].cost = cost; arr[i].reason = reason; arr[i].result = result;
+        }
       } else if (editItem && editItem.isOrig) {
-        localStorage.setItem(ORIG_KEY, JSON.stringify({ name: name, end: end, cost: cost, result: '已完成' }));
+        localStorage.setItem(ORIG_KEY, JSON.stringify(rec));
       } else {
         var nextNo = nextCardNo(arr);
-        arr.push({ id: String(nextNo), cardNo: nextNo, name: name, end: end, cost: cost, result: '已完成' });
+        var row = { id: String(nextNo), cardNo: nextNo, name: name, start: start, end: end,
+                    cost: cost, reason: reason, result: result };
+        arr.push(row);
       }
       setFlows(arr);
       mask.remove();
 
-      /* 生成/更新这张卡片的独立 HTML */
       var saved = null;
       if (editItem && editItem.id) {
         for (var z = 0; z < arr.length; z++) if (arr[z].id === editItem.id) saved = arr[z];
       } else if (editItem && editItem.isOrig) {
-        saved = { id: 'orig', cardNo: 'orig', name: name, end: end, cost: cost, result: '已完成' };
+        saved = { id: 'orig', cardNo: 'orig', name: name, start: start, end: end,
+                  cost: cost, reason: reason, result: result };
       } else {
         saved = arr[arr.length - 1];
       }
@@ -661,8 +771,10 @@ try {
       try { savedOrig = JSON.parse(localStorage.getItem(ORIG_KEY) || 'null'); } catch (e) {}
       /* 优先用用户改过的值，没有就从卡片 DOM 里读真实字段 */
       item.name = (savedOrig && savedOrig.name) || '中职学生请假流程';
+      item.start = (savedOrig && savedOrig.start) || '';
       item.end = (savedOrig && savedOrig.end) || (node ? parseEnd(node) : '2026-11-02 15:00');
       item.cost = (savedOrig && savedOrig.cost) || (node ? parseCost(node) : '1天4小时');
+      item.reason = (savedOrig && savedOrig.reason) || '';
       item.result = (savedOrig && savedOrig.result) || '已完成';
     } else {
       var arrAll = getFlows(), hit = null;
@@ -671,8 +783,10 @@ try {
       }
       if (hit) {
         item.name = hit.name || item.name;
+        item.start = hit.start || '';
         item.end = hit.end || '';
         item.cost = hit.cost || '';
+        item.reason = hit.reason || '';
         item.result = hit.result || '已完成';
       }
     }
