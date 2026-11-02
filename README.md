@@ -209,14 +209,53 @@ React 渲染中断，页面就是一片白。
 
 ### 上传（三选一）
 
+> **本目录已经初始化好 git 仓库并提交过一次**（分支 `main`，115 个文件）。
+> 也就是说你不用再 `git init`，只要挂上远程地址推上去即可。
+
 | 方式 | 适合 | 注意 |
 |---|---|---|
-| **GitHub Desktop** | 不想碰命令行 | 直接把整个文件夹拖进去，无文件数量限制，最省事 |
-| **git 命令行** | 熟 git | `git init` → `add` → `commit` → `push` |
-| 网页 Upload files | 临时改文件 | **一次最多 100 个文件**，本项目 111 个，要分两批拖 |
+| **GitHub Desktop**（最省事） | 不想碰命令行 | 装好后 File → Add local repository → 选本目录 → Publish repository，一键建仓库+推送 |
+| **git 命令行** | 熟 git | 见下方命令，https 推送需要 Token，SSH 更省心 |
+| 网页 Upload files | 临时改文件 | **一次最多 100 个文件**，本项目 115 个，要分两批拖 |
 
-> 网页上传分批的办法：第一批先拖 `index.html` + 4 个 js + css + `static/` `font/` `icons/` 三个目录；
-> 第二批单独拖那 70 个 `N.哈希.async.js`。
+#### 方式 A：GitHub Desktop（推荐）
+
+1. 下载安装 <https://desktop.github.com/>
+2. 登录你的 GitHub 账号
+3. `File` → `Add local repository...` → 选到本目录（`shiwu-zhongxin`）→ Add
+4. 右上角点 **Publish repository**
+5. **取消勾选** `Keep this code private`（必须是 Public，免费账号的 Pages 只认公开仓库）
+6. Name 填 `shiwu-zhongxin` → Publish repository
+
+仓库直接建好并推上去了，跳到下面「开启 Pages」。
+
+#### 方式 B：命令行
+
+先在 GitHub 网页建一个**空仓库**（名字如 `shiwu-zhongxin`），
+**不要勾** `Add a README file`、`.gitignore`、`license` —— 勾了会跟本地提交冲突。
+
+然后：
+
+```bash
+cd 到本目录
+git remote add origin https://github.com/你的用户名/shiwu-zhongxin.git
+git push -u origin main
+```
+
+首次推送会要求登录。**GitHub 不支持密码认证**，两种解法：
+
+- **SSH（推荐，配一次永久免密）**
+  ```bash
+  ssh-keygen -t ed25519 -C "你的邮箱"       # 一路回车
+  # 把 ~/.ssh/id_ed25519.pub 的内容贴到 GitHub → Settings → SSH and GPG keys
+  git remote set-url origin git@github.com:你的用户名/shiwu-zhongxin.git
+  git push -u origin main
+  ```
+- **Personal Access Token**：GitHub → Settings → Developer settings →
+  Personal access tokens → 生成一个带 `repo` 权限的 token，推送时密码处填这个 token。
+
+> 万一不小心勾了 README 导致 `push` 被拒（`rejected - non-fast-forward`）：
+> `git pull --rebase origin main` 再 `git push -u origin main` 即可。
 
 ### 开启 Pages
 
