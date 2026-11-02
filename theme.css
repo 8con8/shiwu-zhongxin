@@ -1,0 +1,69 @@
+/* =====================================================================
+   全站字体配置  ——  事务中心 1:1 复刻
+   ---------------------------------------------------------------------
+   ★ 改字体：只需改下面 --app-font 这一处，全站所有文字立即生效。
+   ★ 图标字体 iconfont 已单独锁定，怎么改都不会乱码。
+   ★ 想换字号：改 --app-size 即可（默认跟随原站）。
+   ===================================================================== */
+:root {
+  /* ──────────────────────────────────────────────
+     ① 主字体（正文 + 标题）—— 改这里！
+     ────────────────────────────────────────────── */
+  --app-font: -apple-system, BlinkMacSystemFont, "PingFang SC",
+              "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif;
+
+  /* ── ② 全局字号（可加粗数字，如 16px / 1.1rem）── */
+  --app-size: inherit;
+}
+
+/* ─────────────────────────────────────────────────
+   覆盖全站所有文字元素（排除图标字体）
+   ───────────────────────────────────────────────── */
+html, body, div, span, p, a, h1, h2, h3, h4, h5, h6,
+ul, ol, li, td, th, tr, caption, label, button,
+input, textarea, select, option, i, em, strong, b, small,
+header, footer, section, article, nav, aside, main, form, table {
+  font-family: var(--app-font) !important;
+}
+html, body {
+  font-size: var(--app-size);
+}
+button, input, textarea, select {
+  font-family: var(--app-font) !important;
+  font-size: var(--app-size);
+}
+
+/* ── 图标字体锁定（勿改，改了图标变乱码）── */
+[class*="iconfont"] {
+  font-family: "iconfont" !important;
+}
+
+/* =====================================================================
+   常用中文字体替换示例（把上面 --app-font 的值换成下面任意一行即可）：
+
+   系统字体（无需下载，直接填名字）：
+     "Microsoft YaHei", "微软雅黑", sans-serif         微软雅黑
+     "SimSun", "宋体", serif                           宋体
+     "SimHei", "黑体", sans-serif                      黑体
+     "KaiTi", "楷体", serif                            楷体
+     "HarmonyOS Sans SC", "PingFang SC", sans-serif    鸿蒙黑体
+     "MiSans", "PingFang SC", sans-serif               小米 MiSans
+     "OPPO Sans", "PingFang SC", sans-serif            OPPO 字体
+     "Vivo Sans", "PingFang SC", sans-serif            vivo 字体
+
+   自己下载的字体（.ttf / .woff2 放进 font/ 目录，然后在下方 @font-face
+   里填对文件名和字体名，再把 --app-font 改成那个名字）：
+     思源黑体（Source Han Sans）、思源宋体、霞鹜文楷（LXGW WenKai）、
+     得意黑（Smiley Sans）、阿里巴巴普惠体（Alibaba PuHuiTi）等
+   ===================================================================== */
+
+/* 自定义字体示例（把 font/你的字体.ttf 改成真实文件名，取消注释即可）：
+@font-face {
+  font-family: "MyFont";
+  src: url("./font/MyFont.woff2") format("woff2"),
+       url("./font/MyFont.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+然后把 --app-font 改成 "MyFont", sans-serif;
+*/

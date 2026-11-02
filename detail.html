@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中职学生请假流程</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    max-width: 497px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    color: #333;
+  }
+
+  /* ===== 应用导航栏 ===== */
+  .navbar {
+    background: #fbfbfb;
+    padding: 10px 16px 6px;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px solid #ececec;
+  }
+  .navbar .close {
+    position: absolute; left: 16px; top: 13px;
+    font-size: 22px; font-weight: 300; color: #111; line-height: 1;
+    text-decoration: none;
+  }
+  .navbar .more {
+    position: absolute; right: 16px; top: 14px;
+    display: flex; gap: 4px;
+  }
+  .navbar .more i {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #111; display: block;
+  }
+  .navbar h1 { font-size: 17px; font-weight: 600; color: #111; }
+  .navbar .url { font-size: 11px; color: #8e8e93; margin-top: 3px; }
+
+  /* ===== 蓝色状态条 ===== */
+  .status-bar {
+    background: #4285f4;
+    color: #fff;
+    display: flex; justify-content: space-between; align-items: center;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+  .status-bar .left { display: flex; align-items: center; gap: 7px; }
+  .pin-icon { width: 15px; height: 15px; flex-shrink: 0; }
+  .status-bar .right { font-size: 14px; }
+
+  /* 收起上方的分隔横线 */
+  .divider { height: 1px; background: #e5e5e5; margin: 0 16px; }
+
+  /* ===== 表单区 ===== */
+  .form-list { background: #fff; }
+  .form-item {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    position: relative;
+  }
+  .form-item .form-label {
+    width: 96px; flex-shrink: 0;
+    padding: 10px 2px 10px 12px;
+    font-size: 14px; color: #111; line-height: 1.6;
+  }
+  .form-item .form-content {
+    flex: 1; padding: 9px 14px 11px 16px;
+    font-size: 14px; color: #111;
+  }
+  .form-item .handle {
+    color: #34a853; font-size: 14px;
+    position: absolute; right: 14px;
+  }
+  .form-content .sub { color: #9a9a9a; font-size: 13.5px; margin-top: 7px; }
+
+  .gap { height: 6px; background: #fff; }
+
+  /* ===== 申请单页面 ===== */
+  .page-title {
+    background: #f2f2f4;
+    text-align: center;
+    font-size: 20px; font-weight: 600; color: #111;
+    padding: 20px 0 22px;
+  }
+  .section-head {
+    background: #fff;
+    padding: 12px 12px;
+    font-size: 15px; color: #111;
+    border-bottom: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
+  }
+  .info-item {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .info-item .info-label {
+    width: 110px; flex-shrink: 0;
+    padding: 13px 4px 13px 12px;
+    font-size: 15px; color: #333; line-height: 1.55;
+  }
+  .info-item .info-label .req { color: #e53935; margin-right: 2px; }
+  .info-item .info-value {
+    flex: 1;
+    padding: 13px 14px 13px 0;
+    font-size: 15px; color: #333;
+  }
+
+  /* ===== 办理进度卡片 ===== */
+  .progress-card {
+    background: #fff;
+    padding: 12px 16px 0;
+  }
+  .progress-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 15px; font-weight: 600; color: #111;
+  }
+  .progress-title::before {
+    content: ""; width: 4px; height: 15px;
+    background: #4285f4; border-radius: 3px;
+  }
+  
+  .timeline { list-style: none; margin-top: 16px; }
+  
+  .timeline li {
+    position: relative;
+    padding-left: 18px;
+    padding-bottom: 16px; /* 节点间距 */
+  }
+  .timeline li:last-child { padding-bottom: 10px; }
+  
+  .timeline li::before {
+    content: ""; position: absolute; left: 0; top: 4px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #34a853;
+    z-index: 1;
+  }
+  
+  /* 🌟 核心修复：定义好上下安全区（留白），利用 margin 自动完美居中 */
+  .timeline li::after {
+    content: ""; 
+    position: absolute; 
+    left: 3.5px; 
+    width: 1px;
+    background: #6fbf87;
+    border-radius: 1px;
+    
+    top: 14px; /* 距离上方绿球底部有 2px 空隙 */
+    bottom: 6px; /* 距离下方绿球顶部有 2px 空隙 */
+    margin: auto 0; /* 在这段安全区内自动垂直居中 */
+  }
+
+  /* 🌟 第二、三根线：长度保持原样（22px），完美居中 */
+  .timeline li:not(:first-child)::after {
+    height: 22px; 
+  }
+
+  /* 🌟 第一根线：稍微加长（12px），完美居中 */
+  .timeline li:first-child::after {
+    height: 12px; 
+  }
+
+  .timeline li:last-child::after { display: none; }
+  
+  .timeline .step-name { 
+    font-size: 14px; 
+    color: #111; 
+    font-weight: 500; 
+    line-height: 20px; 
+  }
+  
+  .timeline .detail {
+    display: flex; justify-content: space-between;
+    margin-top: 6px; 
+    padding-left: 0; 
+    font-size: 13px; color: #9a9a9a;
+    line-height: 18px;
+  }
+  
+  /* 强制数字等宽，右侧时间对齐 */
+  .timeline .detail span:last-child {
+    font-variant-numeric: tabular-nums; 
+    font-feature-settings: "tnum";
+    text-align: right;
+  }
+
+  /* 默认折叠 */
+  .timeline li.extra { display: none; }
+  .timeline.expanded li.extra { display: block; }
+  
+  /* 折叠时第三步下方不显示绿线 */
+  .timeline:not(.expanded) li:nth-child(3)::after { display: none !important; }
+
+  /* ===== 三个点精确对齐 ===== */
+  .dots {
+    display: flex;
+    align-items: center;
+    padding-left: 2px; 
+    padding-top: 2px;
+    padding-bottom: 10px;
+  }
+  .dots i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #4a4a4a;
+    display: block;
+    flex-shrink: 0;
+  }
+  .dots i + i {
+    margin-left: 4px; 
+  }
+
+  /* ===== 展开/收起按钮 ===== */
+  .collapse {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #4285f4;
+    font-size: 14px;
+    padding: 8px 0 14px;
+    cursor: pointer;
+  }
+  .collapse .chev { 
+    width: 14px; 
+    height: 14px; 
+    margin-right: 4px; 
+    transition: transform .2s; 
+  }
+  .collapse.closed .chev { 
+    transform: rotate(180deg); 
+  }
+
+  /* ===== 底部按钮 ===== */
+  .footer {
+    margin-top: auto;
+    background: #fff;
+    padding: 8px 12px 4px;
+  }
+  .btn-circulate {
+    display: block; width: 100%;
+    background: #4285f4; color: #fff;
+    border: none; border-radius: 6px;
+    height: 42px;
+    font-size: 16px; letter-spacing: 6px; text-indent: 6px;
+    cursor: pointer;
+  }
+  .btn-circulate:active { background: #3372dd; }
+
+  .home-indicator {
+    width: 134px; height: 5px; border-radius: 3px;
+    background: #1a1a1a;
+    margin: 10px auto 8px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="status-bar">
+    <span class="left"><svg class="pin-icon" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>已结束</span>
+    <span class="right">流转记录</span>
+  </div>
+
+  <div class="page-title">中职学生申请单</div>
+
+  <div class="section-head">申请信息</div>
+  <div class="info-item">
+    <div class="info-label">申请人</div>
+    <div class="info-value">谢哮</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">申请时间</div>
+    <div class="info-value">2026-10-31 10:06</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">学号</div>
+    <div class="info-value">511321200902288919</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">部门</div>
+    <div class="info-value">中职部</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label"><span class="req">*</span>联系电话</div>
+    <div class="info-value">13550584615</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">班级</div>
+    <div class="info-value">2024级医学检验技术3班</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label"><span class="req">*</span>请假开始时间</div>
+    <div class="info-value">2026-10-31</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label"><span class="req">*</span>请假结束时间</div>
+    <div class="info-value">2026-10-31</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label"><span class="req">*</span>请假天数</div>
+    <div class="info-value">1</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label"><span class="req">*</span>请假原因</div>
+    <div class="info-value">感冒发烧咽痛</div>
+  </div>
+  <div class="info-item" style="border-bottom:none;">
+    <div class="info-label">附件上传</div>
+    <div class="info-value"></div>
+  </div>
+
+  <div class="section-head" style="margin-top:8px;">审批信息</div>
+
+  <div class="form-list">
+    <div class="form-item">
+      <div class="form-label">班主任意见</div>
+      <div class="form-content">
+        <a class="handle" href="javascript:;">办理</a>
+        <div>同意</div>
+        <div class="sub">李永熙</div>
+        <div class="sub">2026-10-30 10:10:46</div>
+      </div>
+    </div>
+    <div class="form-item">
+      <div class="form-label">学工部中职学生管理人员意见</div>
+      <div class="form-content"></div>
+    </div>
+    <div class="form-item">
+      <div class="form-label">学工部负责人意见</div>
+      <div class="form-content"></div>
+    </div>
+    <div class="form-item" style="border-bottom:none;">
+      <div class="form-label">分管校长意见</div>
+      <div class="form-content"></div>
+    </div>
+  </div>
+
+  <div class="gap"></div>
+
+  <div class="progress-card">
+    <div class="progress-title">办理进度</div>
+    <ul class="timeline">
+      <li>
+        <div class="step-name">开始</div>
+      </li>
+      <li>
+        <div class="step-name">申请</div>
+        <div class="detail"><span>谢哮</span><span>2026-10-30 10:06:36</span></div>
+      </li>
+      <li>
+        <div class="step-name">班主任意见</div>
+        <div class="detail"><span>李永熙</span><span>2026-10-30 10:10:46</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name">已结束</div>
+      </li>
+    </ul>
+    
+    <div class="dots" id="dots"><i></i><i></i><i></i></div>
+    <div class="divider"></div>
+    
+    <div class="collapse closed" id="btnCollapse">
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"></polyline></svg>
+      <span id="collapseText">展开</span>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btnCollapse');
+    const tl = document.querySelector('.timeline');
+    const dots = document.getElementById('dots');
+    const text = document.getElementById('collapseText');
+    btn.addEventListener('click', () => {
+      const expanded = tl.classList.toggle('expanded');
+      btn.classList.toggle('closed', !expanded);
+      text.textContent = expanded ? '收起' : '展开';
+      dots.style.display = expanded ? 'none' : 'flex';
+    });
+  </script>
+
+  <div class="footer">
+    <button class="btn-circulate">传阅</button>
+    <div class="home-indicator"></div>
+  </div>
+
+</body>
+</html>

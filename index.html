@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en-US" data-scale="true">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="renderer" content="webkit|ie-comp|ie-stand" />
+
+  <!-- <meta http-equiv="x-dns-prefetch-control" content="on" /> -->
+  <!-- <link rel="dns-prefetch" href="//xlsdg.github.io" /> -->
+
+  <meta name="format-detection" content="telephone=no,email=no" />
+  <link rel="icon" type="image/png" href="./titleIcon.png" sizes="16x16">
+
+  <!-- <link type="image/x-icon" rel="icon" href="/favicon.ico" />
+  <link type="image/x-icon" rel="shortcut icon" href="/favicon.ico" />
+  <link type="image/x-icon" rel="bookmark" href="/favicon.ico" /> -->
+
+  <title>事务中心</title>
+
+  <!-- set `maximum-scale` for some compatibility issues -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+
+  <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- <script src="//as.alipayobjects.com/g/component/fastclick/1.0.6/fastclick.js"></script> -->
+  <!-- <script type="text/javascript" src='./fastclick.js'></script> -->
+
+  <script>
+    window.homePage = '2';  //  1-使用旧首页，其他使用新首页 "2"-新首页
+    window.appBaseOn = '_app_base_on'
+    window.systemName = '_systemName' // 事务中心和后勤系统共存问题
+    window.casStatus = false || false;
+    try {
+        window.openLoginPage = _openLoginPage;
+    } catch (error) {
+        window.openLoginPage = false;
+    }
+    window.gateway_version = 'false'; // 3-新网关
+    window.casLoginUrl = ''; //https://192.168.60.20:4103/lyuapServer/login
+    window.casLogoutUrl = '';
+    //项目地版本，用于做特殊处理
+    window.lytype = '';
+    // 退出时解绑公众号
+    window.gzhUnbind = false;
+    // fastclick导致点击不灵敏
+    // FastClick.prototype.focus = function(targetElement) {
+    //   let length;
+    //   if (
+    //     targetElement.setSelectionRange &&
+    //     targetElement.type.indexOf("date") !== 0 &&
+    //     targetElement.type !== "time" &&
+    //     targetElement.type !== "month"
+    //   ) {
+    //     length = targetElement.value.length;
+    //     targetElement.focus();
+    //     targetElement.setSelectionRange(length, length);
+    //   } else {
+    //     targetElement.focus();
+    //   }
+    // };
+    // if ('addEventListener' in document) {
+    //   document.addEventListener('DOMContentLoaded', function() {
+    //     FastClick.attach(document.body);
+    //   }, false);
+    // }
+    /* 原版这里会 document.writeln 引 //as.alipayobjects.com 的 es6-promise，
+       断网 / 离线场景下拉不到会卡住加载。现代 WebView（Android 5+）都已内置 Promise，
+       这里直接去掉外链，纯离线可跑。 */
+  </script>
+<link href="./index.6255e841.css" rel="stylesheet"><link href="./theme.css" rel="stylesheet">
+<script src="./local-mock.js"></script><script src="./card-view.js"></script><script src="./page-guard.js"></script></head>
+<body>
+  <script>
+window.__DEBUG_UNLOCK = /__unlock/.test(location.href);
+// 预览模式：清除旧用户缓存，确保每次用最新的 mock 数据
+try {
+  sessionStorage.removeItem("ly-gtc-userLogin");
+  sessionStorage.removeItem("ly-hq-swzx-userLogin");
+  sessionStorage.removeItem("Authorization");
+  sessionStorage.removeItem("system");
+  sessionStorage.removeItem("appId");
+} catch (e) {}
+</script>
+<div id="root"></div>
+<script type="text/javascript" src="./common.b735d9be7547c936300d.js"></script><script type="text/javascript" src="./index.17246456.js"></script><script type="text/javascript" src="./fastclick.03d1d3b3.js"></script><script type="text/javascript" src="./text-map.js"></script><script type="text/javascript" src="./text-override.js"></script><script>
+/* 自定义请假流程：搜索框输入 7878 解锁 → 可添加 / 修改 / 删除请假流程（1:1 复刻原卡片） */
+(function () {
+  var UNLOCK = '7878';
+  var KEY = '__custom_flows_v1';
+  var DELKEY = '__deleted_flows_v1';
+  var ORIG_KEY = '__orig_edit_v1';
+  var unlocked = false;
+  var delMode = false;
+  var addBtn = null;
+  var delBtn = null;
+
+  /* ---- 原卡片三个内嵌 PNG 图标（从页面实测抓取，颜色 rgb(166,167,172)）---- */
+  var ICON_CAL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAbBAMAAACdJvIfAAAAHlBMVEUAAACgp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6z+gkVmAAAACXRSTlMA8cStJ8M8JTu+5aEWAAAAXElEQVQY02MAAs6ZIHLmBCBBgMtuOBMOhAsYHGciAREGS2TuZAbJaQi9mROBJIQLZWByYQDMRQb4ueh6CXM1Z05lABFw7iQGEEFdvSDvw0HnRLTAQQ86FuSAdQAA5It1c4lH85sAAAAASUVORK5CYII=';
+  var ICON_CLK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAMAAACelLz8AAAASFBMVEUAAACgp6yerKygpq2gp62gp6yhqKyepq+gp6ygpqygp6ygpq2gp6yipqqeqa6fp62fqK2gpqydqK6gqK2gp6ygqKufp6ugp6w+h35mAAAAF3RSTlMA8wd2xq0lHue+waRTPxCFmIEvm5lbQKk/1d4AAADKSURBVCjPfZJZDsIwDAXttFm6sjP3vymEOrgIwfxUysjVi/OkkbqhqJahS/LJMvJmXMQJRz44hmbWHtB4y2FNt6hAv9pMNTGJkWJ129wF6GRHB1xeCdzsXc0yQtxODnowF2EUOYPm7QDUVFY4ywkmaQoxJjjJAPO3mmGQAvlbZSiiEFxVapjw/FS1vpU5UwWStPA2ZT+0GI7HsPCOh7crO35lW5Tji/q13rs8ubpzc/37lF6Aac4h5HmyAvyujbP0Lvq7NLyisK/oA5ApFMMshOteAAAAAElFTkSuQmCC';
+  var ICON_PEN = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAbCAMAAABVyG9ZAAAAYFBMVEUAAACgp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6wVY/7GAAAAH3RSTlMA6y3kJFs/ePYP1JVqQsqxiDge8hXdwezlnFP4gksF+ohxSQAAALFJREFUKM+Fz9kKwyAURdGb2Zi0iZq5w/n/v6yliiN0vwhngSJFvcWr7SlXuQJgV04KqKkCmpwUJfV3bansJZGxSMBulLG6QsE9awMpl93ZFgjNqIy1QCBPjIu588LDlw4j0c/qA1MspA+wRg91Ig0GDughIzOJWDojZtD1eTEfGFOxxE4rgxVLwBmJpY2DCV8cTQuHEk58IrlCOQnoaxBO3FtSyraAOqw4ssVCdSr/+wBlTBUuEXP35gAAAABJRU5ErkJggg==';
+
+  /* 启动即硬清理：清掉任何上一版残留的按钮与卡片 */
+  function hardClean() {
+    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn, [data-custom-flow]');
+    for (var i = 0; i < xs.length; i++) {
+      if (xs[i].parentNode) xs[i].parentNode.removeChild(xs[i]);
+    }
+    addBtn = null;
+    delBtn = null;
+  }
+  try { hardClean(); } catch (e) {}
+
+  function getFlows() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function setFlows(a) { localStorage.setItem(KEY, JSON.stringify(a)); }
+
+  function toast(msg) {
+    var d = document.createElement('div');
+    d.textContent = msg;
+    d.style.cssText = 'position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);background:rgba(0,0,0,.82);color:#fff;padding:10px 22px;border-radius:20px;font-size:15px;z-index:99999;';
+    document.body.appendChild(d);
+    setTimeout(function () { if (d.parentNode) d.remove(); }, 1500);
+  }
+
+  /* ================= 解锁 ================= */
+  function isUnlockInput(el) {
+    if (!el || el.tagName !== 'INPUT') return false;
+    var ph = el.getAttribute('placeholder') || '';
+    return ph.indexOf('事务名称') > -1;
+  }
+
+  /* 读取当前搜索框的值 */
+  function currentSearchValue() {
+    var ins = document.querySelectorAll('input');
+    for (var i = 0; i < ins.length; i++) {
+      if (isUnlockInput(ins[i])) return (ins[i].value || '').trim();
+    }
+    return '';
+  }
+
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!isUnlockInput(el)) return;
+    var v = (el.value || '').trim();
+    if (v === UNLOCK) {
+      if (!unlocked) {
+        unlocked = true;
+        toast('功能已解锁');
+      }
+      refreshAll();
+    } else {
+      /* 搜索框内容被改动 / 清空 → 收回按钮与删除能力，但卡片保留 */
+      if (unlocked) {
+        unlocked = false;
+        delMode = false;
+        refreshAll();
+      }
+    }
+  }, true);
+
+  /* 输入框被清空也要能收到（change / keyup 兜底） */
+  ['change', 'keyup', 'search'].forEach(function (evt) {
+    document.addEventListener(evt, function (e) {
+      if (!isUnlockInput(e.target)) return;
+      var v = (e.target.value || '').trim();
+      if (v !== UNLOCK && unlocked) {
+        unlocked = false;
+        delMode = false;
+        refreshAll();
+      }
+    }, true);
+  });
+
+  /* ================= 悬浮按钮 ================= */
+  function showBtns() {
+    if (!document.body) return;
+    if (!addBtn) {
+      addBtn = document.createElement('div');
+      addBtn.id = '__addFlowBtn';
+      addBtn.textContent = '＋ 添加请假流程';
+      addBtn.onclick = function () { openForm(null); };
+    }
+    addBtn.style.cssText = 'position:fixed;right:18px;bottom:118px;background:#4A79EF;color:#fff;padding:12px 18px;border-radius:24px;box-shadow:0 4px 14px rgba(74,121,239,.45);font-size:15px;z-index:9999;cursor:pointer;user-select:none;';
+    if (!addBtn.parentNode) document.body.appendChild(addBtn);
+
+    if (!delBtn) {
+      delBtn = document.createElement('div');
+      delBtn.id = '__delFlowBtn';
+      delBtn.onclick = function () { toggleDelMode(); };
+    }
+    delBtn.style.cssText = 'position:fixed;right:18px;bottom:70px;padding:12px 18px;border-radius:24px;font-size:15px;z-index:9999;cursor:pointer;user-select:none;color:#fff;box-shadow:0 4px 14px rgba(242,86,75,.45);background:' + (delMode ? '#7A8B99' : '#F2564B') + ';';
+    delBtn.textContent = delMode ? '✓ 完成删除' : '－ 删除请假流程';
+    if (!delBtn.parentNode) document.body.appendChild(delBtn);
+  }
+
+  function hideBtns() {
+    if (addBtn && addBtn.parentNode) addBtn.style.display = 'none';
+    if (delBtn && delBtn.parentNode) delBtn.style.display = 'none';
+    /* 彻底移除：兜底清掉页面上任何残留的同 id 节点 */
+    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn');
+    for (var i = 0; i < xs.length; i++) {
+      if (xs[i].parentNode) xs[i].parentNode.removeChild(xs[i]);
+    }
+    addBtn = null;
+    delBtn = null;
+  }
+
+  function toggleDelMode() {
+    delMode = !delMode;
+    refreshAll();
+    toast(delMode ? '点卡片右上角 × 删除' : '已退出删除');
+  }
+
+  /* ================= 定位：只在「我的申请」列表里插卡 ================= */
+  /* 只认路由：该 SPA 会把所有页面同时保留在 DOM 里（靠 display/位移隐藏），
+     所以绝对不能靠页面文本判断当前在哪一页。 */
+  function isMyApplyPage() {
+    var h = (location.hash || '');
+    return h.indexOf('/myApply') > -1;
+  }
+
+  /* 真正的列表插入点：am-list-footer（「全部加载完毕」那一行） */
+  function findListAnchor() {
+    /* 1) 优先用 antd-mobile 列表页脚 */
+    var foot = document.querySelector('.am-list-footer');
+    if (foot && (foot.textContent || '').indexOf('全部加载完毕') > -1) return foot;
+    /* 2) 兜底：任何文本恰为「全部加载完毕」的最内层节点 */
+    var all = document.body.getElementsByTagName('*');
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.children.length !== 0) continue;
+      if ((el.textContent || '').trim() === '全部加载完毕') return el;
+    }
+    /* 3) 再兜底：文本包含「全部加载完毕」且子节点较少者 */
+    for (var j = 0; j < all.length; j++) {
+      var e2 = all[j];
+      if (e2.children.length > 1) continue;
+      if ((e2.textContent || '').trim() === '全部加载完毕') return e2;
+    }
+    return null;
+  }
+
+  function findOriginalCard() {
+    if (!isMyApplyPage()) return null;
+    var all = document.querySelectorAll('div');
+    var cands = [];
+    var BAD = ['事务分类', '近一周', '由近到远', '全部加载完毕', '当前共有', '请输入事务名称', '推荐', '服务事项'];
+    for (var i = 0; i < all.length; i++) {
+      var d = all[i];
+      if (d.getAttribute('data-custom-flow')) continue;
+      if (d.closest && d.closest('[data-custom-flow]')) continue;
+      var txt = (d.textContent || '').replace(/\s+/g, '');
+      if (txt.indexOf('完结时间：') === -1) continue;
+      if (txt.indexOf('总耗时：') === -1) continue;
+      if (txt.indexOf('申请结果：') === -1) continue;
+      var bad = false;
+      for (var f = 0; f < BAD.length; f++) if (txt.indexOf(BAD[f]) > -1) { bad = true; break; }
+      if (bad) continue;
+      cands.push(d);
+    }
+    if (!cands.length) return null;
+    for (var m = 0; m < cands.length; m++) {
+      var outer = false;
+      for (var n = 0; n < cands.length; n++) {
+        if (m !== n && cands[m].contains(cands[n])) { outer = true; break; }
+      }
+      if (!outer && cands[m].isConnected) return cands[m];
+    }
+    return null;
+  }
+
+  /* 纯静态版：不再让服务端写 card-<id>.html（静态托管下必然 404）。
+     卡片详情改由 card-view.js 在页面内渲染，这里只把文件名回调出去保持流程不变。 */
+  function ensureCardFile(item, cb) {
+    var fn = 'card-' + (item.cardNo || item.id) + '.html';
+    if (cb) setTimeout(function () { cb(fn); }, 0);
+  }
+
+  /* 下一个卡片编号：取现有最大编号 +1 */
+  function nextCardNo(arr) {
+    var max = 0;
+    for (var i = 0; i < arr.length; i++) {
+      var n = parseInt(arr[i].cardNo || arr[i].id, 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+    return max + 1;
+  }
+
+  /* 兼容旧数据：把 id 是时间戳的老卡片转成顺序编号 */
+  function normalizeCards() {
+    var arr = getFlows();
+    var changed = false;
+    var next = 1;
+    for (var i = 0; i < arr.length; i++) {
+      var n = parseInt(arr[i].cardNo, 10);
+      if (isNaN(n)) {
+        arr[i].cardNo = next;
+        arr[i].id = String(next);
+        changed = true;
+      }
+      next = Math.max(next, parseInt(arr[i].cardNo, 10) || 0) + 1;
+    }
+    if (changed) setFlows(arr);
+    return arr;
+  }
+
+  /* ================= 表单 ================= */
+  function openForm(editItem) {
+    var mask = document.createElement('div');
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    var it = editItem || {};
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:14px;width:86%;max-width:330px;padding:22px;box-sizing:border-box;';
+    var idTip = '';
+    if (editItem && editItem.cardNo) {
+      var isOrigCard = String(editItem.cardNo) === 'orig';
+      var label = isOrigCard ? '原始记录' : editItem.cardNo;
+      var fileTip = isOrigCard ? '原始记录' : ('第 ' + editItem.cardNo + ' 张卡片');
+      idTip = '<div id="__af_idtip" style="text-align:center;margin-bottom:14px;">' +
+        '<span id="__af_idnum" style="display:inline-block;background:' + (isOrigCard ? '#7A8B99' : '#4A79EF') +
+        ';color:#fff;font-size:13px;padding:5px 14px;border-radius:12px;">卡片 ID：' + label + '</span>' +
+        '<div style="font-size:11px;color:#9aa9b5;margin-top:6px;">' + fileTip + '</div>' +
+        '</div>';
+    }
+    box.innerHTML =
+      '<div style="font-size:18px;font-weight:600;text-align:center;margin-bottom:18px;color:#111;">' + (editItem ? '修改请假流程' : '添加请假流程') + '</div>' +
+      idTip +
+      '<div style="margin-bottom:14px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">名称</div><input id="__af_name" type="text" value="' + (it.name || '中职学生请假流程') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
+      '<div style="margin-bottom:14px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">完结时间</div><input id="__af_end" type="text" value="' + (it.end || '2026-11-05 10:00') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
+      '<div style="margin-bottom:18px;"><div style="font-size:13px;color:#738592;margin-bottom:6px;">总耗时</div><input id="__af_cost" type="text" value="' + (it.cost || '2天') + '" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:11px;font-size:15px;"></div>' +
+      '<div style="display:flex;gap:10px;"><button id="__af_cancel" style="flex:1;height:42px;border:none;border-radius:8px;background:#f0f0f0;font-size:15px;">取消</button><button id="__af_ok" style="flex:1;height:42px;border:none;border-radius:8px;background:#4A79EF;color:#fff;font-size:15px;">确定</button></div>';
+    mask.appendChild(box);
+    document.body.appendChild(mask);
+    box.querySelector('#__af_cancel').onclick = function () { mask.remove(); };
+    box.querySelector('#__af_ok').onclick = function () {
+      var name = box.querySelector('#__af_name').value.trim() || '中职学生请假流程';
+      var end = box.querySelector('#__af_end').value.trim() || '2026-11-05 10:00';
+      var cost = box.querySelector('#__af_cost').value.trim() || '2天';
+      var arr = getFlows();
+      if (editItem && editItem.id) {
+        for (var i = 0; i < arr.length; i++) if (arr[i].id === editItem.id) { arr[i].name = name; arr[i].end = end; arr[i].cost = cost; }
+      } else if (editItem && editItem.isOrig) {
+        localStorage.setItem(ORIG_KEY, JSON.stringify({ name: name, end: end, cost: cost, result: '已完成' }));
+      } else {
+        var nextNo = nextCardNo(arr);
+        arr.push({ id: String(nextNo), cardNo: nextNo, name: name, end: end, cost: cost, result: '已完成' });
+      }
+      setFlows(arr);
+      mask.remove();
+
+      /* 生成/更新这张卡片的独立 HTML */
+      var saved = null;
+      if (editItem && editItem.id) {
+        for (var z = 0; z < arr.length; z++) if (arr[z].id === editItem.id) saved = arr[z];
+      } else if (editItem && editItem.isOrig) {
+        saved = { id: 'orig', cardNo: 'orig', name: name, end: end, cost: cost, result: '已完成' };
+      } else {
+        saved = arr[arr.length - 1];
+      }
+      if (saved) ensureCardFile(saved, function () {});
+
+      toast(editItem ? '已修改' : '已添加');
+      refreshAll();
+    };
+  }
+
+  /* ================= 卡片：完全按原样式复刻 ================= */
+  function makeDelBtn(cb) {
+    var del = document.createElement('span');
+    del.textContent = '×';
+    del.setAttribute('data-af-del', '1');
+    del.style.cssText = 'position:absolute;top:8px;right:8px;width:26px;height:26px;line-height:26px;text-align:center;font-size:17px;color:#fff;background:#F2564B;border-radius:50%;box-shadow:0 2px 6px rgba(242,86,75,.45);z-index:9;cursor:pointer;';
+    del.onclick = function (ev) { ev.stopPropagation(); ev.preventDefault(); cb(); };
+    return del;
+  }
+
+  /* 找到第一张真实卡片的最外层包装（含 am-swipe 与左右 12px 留白的那层） */
+  function findTemplateCard() {
+    var card = document.querySelector('.item___2s84I');
+    if (!card) {
+      /* 兜底：按文本找最内层卡片 */
+      var all = document.querySelectorAll('div');
+      var best = null;
+      for (var i = 0; i < all.length; i++) {
+        var txt = (all[i].textContent || '').replace(/\s+/g, '');
+        if (txt.indexOf('完结时间：') === -1 || txt.indexOf('总耗时：') === -1) continue;
+        if (txt.indexOf('事务分类') > -1 || txt.indexOf('当前共有') > -1) continue;
+        if (!best || best.contains(all[i])) best = all[i];
+      }
+      card = best;
+    }
+    if (!card) return null;
+
+    /* 优先取 am-swipe 的父级（负责左右留白），保证克隆后位置一致 */
+    var swipe = card.closest('.am-swipe');
+    if (swipe && swipe.parentElement) return swipe.parentElement;
+    if (swipe) return swipe;
+    return card;
+  }
+
+  /* 文本替换：只改三个字段行 + 标题，绝不触碰其它结构 */
+  function setCardText(card, name, end, cost, result) {
+    /* 1) 标题：只认 .title___1rZkC，找不到就找第一个 class 含 title 的元素 */
+    var title = card.querySelector('.title___1rZkC') || card.querySelector('[class*="title"]');
+    if (title) title.textContent = name;
+
+    /* 2) 三个字段行：只处理最内层、且直接持有「完结时间/总耗时/申请结果」文本的元素 */
+    var rows = card.querySelectorAll('div,span,p');
+    for (var i = 0; i < rows.length; i++) {
+      var el = rows[i];
+      /* 必须有子元素（图标）或就是叶子节点，且不能是内容容器 */
+      var cls = el.className || '';
+      if (cls.indexOf('content') > -1 || cls.indexOf('title') > -1) continue;
+      /* 跳过包含其它字段的容器（说明不是单行） */
+      var inner = (el.textContent || '');
+      var hit = 0;
+      if (inner.indexOf('完结时间') > -1) hit++;
+      if (inner.indexOf('总耗时') > -1) hit++;
+      if (inner.indexOf('申请结果') > -1) hit++;
+      if (hit !== 1) continue;
+
+      var direct = '';
+      for (var n = 0; n < el.childNodes.length; n++) {
+        if (el.childNodes[n].nodeType === 3) direct += el.childNodes[n].nodeValue;
+      }
+      if (!direct) continue;
+
+      var newText = null;
+      if (direct.indexOf('完结时间') > -1) newText = direct.replace(/(完结时间[：:]\s*).*/, '$1' + end);
+      else if (direct.indexOf('总耗时') > -1) newText = direct.replace(/(总耗时[：:]\s*).*/, '$1' + cost);
+      else if (direct.indexOf('申请结果') > -1) newText = direct.replace(/(申请结果[：:]\s*).*/, '$1' + result);
+      if (newText === null) continue;
+
+      /* 只删除文本节点，保留 img 图标 */
+      for (var m = el.childNodes.length - 1; m >= 0; m--) {
+        if (el.childNodes[m].nodeType === 3) el.removeChild(el.childNodes[m]);
+      }
+      el.appendChild(document.createTextNode(newText));
+    }
+  }
+
+  /* 生成卡片：克隆第一张真实卡片 */
+  function buildCard(item) {
+    var tpl = findTemplateCard();
+    var card;
+    if (tpl) {
+      card = tpl.cloneNode(true);
+
+      /* 清掉左滑删除层的残留（橙色 cover 与滑出按钮） */
+      var junk = card.querySelectorAll('.am-swipe-cover, .am-swipe-actions, [data-af-del]');
+      for (var q = 0; q < junk.length; q++) if (junk[q].parentNode) junk[q].parentNode.removeChild(junk[q]);
+
+      /* 内容层复位：避免被当成已滑出的状态 */
+      var sw = card.querySelector('.am-swipe');
+      if (sw) { sw.style.transform = ''; sw.style.overflow = 'hidden'; }
+      var cnt = card.querySelector('.am-swipe-content');
+      if (cnt) { cnt.style.transform = 'translate3d(0,0,0)'; cnt.style.overflow = 'hidden'; }
+
+      card.removeAttribute('data-orig-bound');
+      card.removeAttribute('data-orig-hidden');
+      card.removeAttribute('data-orig-replaced');
+      card.style.display = '';
+      setCardText(card, item.name || '中职学生请假流程', item.end || '', item.cost || '', item.result || '已完成');
+    } else {
+      card = document.createElement('div');
+      card.style.cssText = 'position:relative;background:#fff;border-left:3px solid rgb(51,163,244);border-radius:3px;box-shadow:rgba(22,77,126,.1) 0 0 6px 0;padding:12px 15px;margin:0;box-sizing:border-box;cursor:pointer;';
+      var t0 = document.createElement('div');
+      t0.style.cssText = 'font-size:18px;font-weight:700;color:rgb(31,39,44);';
+      t0.textContent = item.name || '中职学生请假流程';
+      card.appendChild(t0);
+      var c0 = document.createElement('div');
+      c0.style.cssText = 'margin:8px 0 0;font-size:12px;color:rgb(120,120,120);line-height:24px;';
+      c0.innerHTML = '完结时间：' + (item.end || '') + '<br>总耗时：' + (item.cost || '') + '<br>申请结果：' + (item.result || '已完成');
+      card.appendChild(c0);
+    }
+
+    card.setAttribute('data-custom-flow', item.id);
+    var inner = card.querySelector('.am-swipe-content') || card;
+    inner.style.position = 'relative';
+    inner.style.cursor = 'pointer';
+
+    if (unlocked && delMode) {
+      inner.appendChild(makeDelBtn(function () {
+        if (item.isOrig) { askConfirm('确定删除这条请假流程吗？', doDeleteOriginal); }
+        else { askConfirm('确定删除这条请假流程吗？', function () { doDeleteFlow(item.id); }); }
+      }));
+    }
+
+    return card;
+  }
+
+  /* ================= 交互：单击进详情，长按改内容 ================= */
+  var LONG_PRESS_MS = 550;
+
+  /* 让元素具备「单击 / 长按」两种行为 */
+  function bindPress(el, onLongPress, onTap) {
+    if (!el) return;
+    el.addEventListener('touchstart', function (ev) {
+      el.__lpFired = false;
+      el.__lpTimer = setTimeout(function () {
+        el.__lpFired = true;
+        if (window.navigator.vibrate) { try { window.navigator.vibrate(20); } catch (e) {} }
+        onLongPress();
+      }, LONG_PRESS_MS);
+    }, { passive: true });
+
+    var cancel = function () {
+      if (el.__lpTimer) { clearTimeout(el.__lpTimer); el.__lpTimer = null; }
+    };
+    el.addEventListener('touchend', function (ev) {
+      cancel();
+      if (el.__lpFired) {
+        /* 长按已触发：阻止后续 click 进入详情 */
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+    });
+    el.addEventListener('touchmove', cancel, { passive: true });
+    el.addEventListener('touchcancel', cancel, { passive: true });
+
+    /* 鼠标环境（电脑浏览器）：长按用 mousedown 计时 */
+    el.addEventListener('mousedown', function (ev) {
+      if (ev.button !== 0) return;
+      el.__lpFired = false;
+      el.__lpTimer = setTimeout(function () {
+        el.__lpFired = true;
+        onLongPress();
+      }, LONG_PRESS_MS);
+    });
+    el.addEventListener('mouseup', function () { cancel(); });
+    el.addEventListener('mouseleave', function () { cancel(); });
+
+    el.addEventListener('click', function (ev) {
+      if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-af-del')) return;
+      if (el.__lpFired) { el.__lpFired = false; return; }
+      onTap(ev);
+    });
+  }
+
+  /* ============ 全局事件委托：单击进详情 / 长按改封面 ============ */
+  var pressTimer = null;
+  var pressFired = false;
+
+  function cardOf(node) {
+    while (node && node !== document.body) {
+      if (node.classList && node.classList.contains('item___2s84I')) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function lpStart(node) {
+    pressFired = false;
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = setTimeout(function () {
+      pressFired = true;
+      if (window.navigator.vibrate) { try { window.navigator.vibrate(20); } catch (e) {} }
+      if (!unlocked) { return; }
+      var host = node.closest('[data-custom-flow]');
+      if (host) {
+        var id = host.getAttribute('data-custom-flow');
+        var arr = getFlows(), found = null;
+        for (var i = 0; i < arr.length; i++) if (arr[i].id === id) found = arr[i];
+        openForm(found || {});
+      } else {
+        openForm({ isOrig: true, name: '中职学生请假流程', end: parseEnd(node), cost: parseCost(node) });
+      }
+    }, LONG_PRESS_MS);
+  }
+
+  function lpEnd() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  }
+
+  ['touchstart', 'mousedown'].forEach(function (t) {
+    document.addEventListener(t, function (ev) {
+      if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-af-del')) return;
+      var node = cardOf(ev.target);
+      if (node) lpStart(node);
+    }, true);
+  });
+
+  ['touchend', 'touchmove', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (t) {
+    document.addEventListener(t, lpEnd, true);
+  });
+
+  /* 长按触发后，吞掉紧随的 click，避免进入详情 */
+  document.addEventListener('click', function (ev) {
+    if (pressFired) {
+      pressFired = false;
+      ev.stopPropagation();
+      ev.preventDefault();
+      return;
+    }
+    if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-af-del')) return;
+    var node = cardOf(ev.target);
+    if (!node) return;
+
+    /* ★ 已解锁（输入过 7878）：单击弹出编辑面板，并显示卡片 ID */
+    if (unlocked) {
+      ev.stopPropagation();
+      ev.preventDefault();
+      var hostU = node.closest('[data-custom-flow]');
+      if (hostU) {
+        var cid = hostU.getAttribute('data-custom-flow');
+        var arrU = normalizeCards(), foundU = null;
+        for (var u = 0; u < arrU.length; u++) if (String(arrU[u].cardNo || arrU[u].id) === cid) foundU = arrU[u];
+        openForm(foundU || { id: cid, cardNo: cid });
+      } else {
+        openForm({ isOrig: true, cardNo: 'orig', name: '中职学生请假流程', end: parseEnd(node), cost: parseCost(node) });
+      }
+      return;
+    }
+
+    /* 未解锁：自定义卡片和原始卡片都进「页内详情浮层」
+       （原版这里把原始卡片交给 Vue 跳它自己的详情页，但详情接口没有数据，
+        在离线/纯静态环境下会跳出一张空白页，所以统一走本地浮层） */
+    ev.stopPropagation();
+    ev.preventDefault();
+    var host = node.closest('[data-custom-flow]');
+    if (host) {
+      openCardFile(host.getAttribute('data-custom-flow'));
+    } else {
+      openCardFile('orig', node);
+    }
+  }, true);
+
+  /* 纯静态版：卡片不再落地成文件，无需探测/同步，保留空函数避免改动其它调用点 */
+  var syncingIds = {};
+  function syncCardFiles(arr) { /* no-op */ }
+
+  /* 单击卡片 → 页内浮层显示详情（纯静态版，不再跳 card-<id>.html 文件） */
+  function openCardFile(id, node) {
+    /* id 现在是顺序编号（1、2、3…），orig 是原始那条 */
+    var item = { cardNo: id, name: '中职学生请假流程', end: '', cost: '', result: '已完成' };
+
+    if (id === 'orig') {
+      var savedOrig = null;
+      try { savedOrig = JSON.parse(localStorage.getItem(ORIG_KEY) || 'null'); } catch (e) {}
+      /* 优先用用户改过的值，没有就从卡片 DOM 里读真实字段 */
+      item.name = (savedOrig && savedOrig.name) || '中职学生请假流程';
+      item.end = (savedOrig && savedOrig.end) || (node ? parseEnd(node) : '2026-11-02 15:00');
+      item.cost = (savedOrig && savedOrig.cost) || (node ? parseCost(node) : '1天4小时');
+      item.result = (savedOrig && savedOrig.result) || '已完成';
+    } else {
+      var arrAll = getFlows(), hit = null;
+      for (var i = 0; i < arrAll.length; i++) {
+        if (String(arrAll[i].cardNo || arrAll[i].id) === String(id)) hit = arrAll[i];
+      }
+      if (hit) {
+        item.name = hit.name || item.name;
+        item.end = hit.end || '';
+        item.cost = hit.cost || '';
+        item.result = hit.result || '已完成';
+      }
+    }
+
+    if (typeof window.__openCardView === 'function') {
+      window.__openCardView(item);
+      return;
+    }
+
+    /* 兜底：万一 card-view.js 没加载，仍按老方式跳文件 */
+    var fn = (id === 'orig') ? 'card-orig.html' : ('card-' + id + '.html');
+    var back = location.protocol + '//' + location.host + location.pathname + location.hash;
+    location.href = fn + '?backUrl=' + encodeURIComponent(back);
+  }
+
+  function onCardTap(ev) {
+    openCardFile('orig');
+  }
+
+  /* ================= 确认框 ================= */
+  function askConfirm(msg, onYes) {
+    var mask = document.createElement('div');
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100001;display:flex;align-items:center;justify-content:center;';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:14px;width:78%;max-width:300px;padding:20px;box-sizing:border-box;text-align:center;';
+    box.innerHTML = '<div style="font-size:16px;color:#222;margin-bottom:20px;line-height:1.6;">' + msg + '</div>' +
+      '<div style="display:flex;gap:10px;"><button id="__cf_no" style="flex:1;height:42px;border:none;border-radius:8px;background:#f0f0f0;font-size:15px;">取消</button>' +
+      '<button id="__cf_yes" style="flex:1;height:42px;border:none;border-radius:8px;background:#F2564B;color:#fff;font-size:15px;">删除</button></div>';
+    mask.appendChild(box);
+    document.body.appendChild(mask);
+    box.querySelector('#__cf_no').onclick = function () { mask.remove(); };
+    box.querySelector('#__cf_yes').onclick = function () { mask.remove(); onYes(); };
+  }
+
+  function doDeleteFlow(id) {
+    var arr = getFlows(), out = [];
+    for (var i = 0; i < arr.length; i++) if (arr[i].id !== id) out.push(arr[i]);
+    setFlows(out);
+    toast('已删除');
+    refreshAll();
+  }
+
+  function doDeleteOriginal() {
+    localStorage.setItem(DELKEY, '1');
+    localStorage.removeItem(ORIG_KEY);
+    purgeOrigDom();
+    toast('已删除');
+    refreshAll();
+    setTimeout(purgeOrigDom, 150);
+  }
+
+  /* ================= 原记录：编辑替换 / 删除 ================= */
+  var origNode = null;   /* 被替换掉的原 DOM（保留引用便于还原） */
+
+  function purgeOrigDom() {
+    var reps = document.querySelectorAll('[data-orig-replaced]');
+    for (var i = 0; i < reps.length; i++) if (reps[i].parentNode) reps[i].parentNode.removeChild(reps[i]);
+    var olds = document.querySelectorAll('[data-orig-hidden]');
+    for (var j = 0; j < olds.length; j++) if (olds[j].parentNode) olds[j].parentNode.removeChild(olds[j]);
+    var ds = document.querySelectorAll('span[data-af-del]');
+    for (var k = 0; k < ds.length; k++) if (ds[k].parentNode) ds[k].parentNode.removeChild(ds[k]);
+    var bound = document.querySelectorAll('[data-orig-bound]');
+    for (var m = 0; m < bound.length; m++) bound[m].removeAttribute('data-orig-bound');
+  }
+
+  function renderOriginals() {
+    if (!isMyApplyPage()) return;
+    var deleted = localStorage.getItem(DELKEY) === '1';
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(ORIG_KEY) || 'null'); } catch (e) {}
+
+    /* 已被替换的节点：若源数据清空则移除 */
+    var reps = document.querySelectorAll('[data-orig-replaced]');
+    for (var i = 0; i < reps.length; i++) {
+      var rep = reps[i];
+      if (deleted) { if (rep.parentNode) rep.parentNode.removeChild(rep); continue; }
+      if (!delMode && rep.querySelector('span[data-af-del]')) {
+        var x = rep.querySelector('span[data-af-del]');
+        if (x && x.parentNode) x.parentNode.removeChild(x);
+      }
+    }
+
+    if (deleted) {
+      /* 删除态：把原记录从 DOM 里摘掉 */
+      var orig = findOriginalCard();
+      if (orig && orig.parentElement) {
+        var wrap = orig.parentElement;
+        if (wrap && (wrap.textContent || '').indexOf('完结时间') > -1 && wrap !== document.body) {
+          wrap.setAttribute('data-orig-hidden', '1');
+          wrap.style.display = 'none';
+        } else {
+          orig.setAttribute('data-orig-hidden', '1');
+          orig.style.display = 'none';
+        }
+      }
+      return;
+    }
+
+    if (saved) {
+      /* 已自定义：用复刻卡片替换原 DOM */
+      if (document.querySelector('[data-orig-replaced]')) return;
+      var oc = findOriginalCard();
+      if (!oc) return;
+      var host = oc.parentElement && (oc.parentElement.textContent || '').indexOf('完结时间') === -1 ? oc : oc.parentElement;
+      var newCard = buildCard({ id: 'orig_edit', isOrig: true, name: saved.name, end: saved.end, cost: saved.cost, result: saved.result });
+      newCard.setAttribute('data-orig-replaced', '1');
+      if (oc.parentNode) oc.parentNode.replaceChild(newCard, oc);
+      return;
+    }
+
+    /* 未自定义：只挂删除 × */
+    var card = findOriginalCard();
+    if (!card) return;
+    card.style.position = 'relative';
+    if (delMode) {
+      if (!card.querySelector('span[data-af-del]')) {
+        card.appendChild(makeDelBtn(function () { askConfirm('确定删除这条请假流程吗？', doDeleteOriginal); }));
+      }
+    } else {
+      var olds = card.querySelectorAll('span[data-af-del]');
+      for (var k = 0; k < olds.length; k++) if (olds[k].parentNode) olds[k].parentNode.removeChild(olds[k]);
+    }
+
+  }
+
+  function parseEnd(el) {
+    var m = (el.textContent || '').match(/完结时间[：:]\s*([0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{1,2}:[0-9]{2})/);
+    return m ? m[1] : '2026-11-02 15:00';
+  }
+  function parseCost(el) {
+    /* 原写法 [^\s]+ 会把后面紧贴的「申请结果：已完成」一起吃进来（卡片里各字段是块级拼接、textContent 无空格），
+       这里截到下一个字段名之前 */
+    var t = (el && el.textContent ? el.textContent : '').replace(/\s+/g, ' ');
+    var m = t.match(/总耗时[：:]\s*(.+?)(?=申请结果|完结时间|$)/);
+    var v = m ? m[1].trim() : '';
+    return v || '1天4小时';
+  }
+
+  /* ================= 自定义卡片渲染 ================= */
+  function renderCustom() {
+    /* 先清理所有旧的自定义卡 */
+    var olds = document.querySelectorAll('[data-custom-flow]');
+    for (var i = 0; i < olds.length; i++) if (olds[i].parentNode) olds[i].parentNode.removeChild(olds[i]);
+
+    if (!isMyApplyPage()) return;
+    var anchor = findListAnchor();
+    if (!anchor) return;
+    var arr = normalizeCards();
+    for (var j = 0; j < arr.length; j++) {
+      var c = buildCard(arr[j]);
+      anchor.parentNode.insertBefore(c, anchor);
+    }
+    /* 补齐缺失的独立 HTML（老版本添加的卡片没有文件） */
+    syncCardFiles(arr);
+  }
+
+  /* ================= 统一刷新 ================= */
+  /* 唯一判定入口：必须同时满足「在我的申请页」+「搜索框仍是 7878」 */
+  function shouldShow() {
+    if (!isMyApplyPage()) return false;
+    return currentSearchValue() === UNLOCK;
+  }
+
+  /* 自愈：原卡片内容被写坏（只剩标题）时，清掉本地坏数据并重载一次 */
+  function healBrokenOriginal() {
+    if (sessionStorage.getItem('__af_healing') === '1') return false;
+    var items = document.querySelectorAll('.item___2s84I');
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it.closest('[data-custom-flow]')) continue;
+      var txt = (it.textContent || '').replace(/\s+/g, '');
+      if (!txt) continue;
+      var hasFields = txt.indexOf('完结时间') > -1 || txt.indexOf('总耗时') > -1;
+      if (!hasFields) {
+        try {
+          localStorage.removeItem('__custom_flows_v1');
+          localStorage.removeItem('__orig_edit_v1');
+          localStorage.removeItem('__deleted_flows_v1');
+          sessionStorage.setItem('__af_healing', '1');
+        } catch (e) {}
+        location.reload();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function refreshAll() {
+    if (isMyApplyPage() && healBrokenOriginal()) return;
+    /* 解锁状态只跟搜索框走（影响按钮与删除能力） */
+    var v = currentSearchValue();
+    if (v === UNLOCK) unlocked = true;
+    else if (unlocked) { unlocked = false; delMode = false; }
+
+    /* 1) 不在「我的申请」页：按钮和卡片都清掉 */
+    if (!isMyApplyPage()) {
+      hideBtns();
+      clearCustomCards();
+      return;
+    }
+
+    /* 2) 在「我的申请」页：卡片始终存在（与 7878 无关） */
+    renderCustom();
+    renderOriginals();
+
+    /* 3) 只有 7878 存在时才显示操作按钮 */
+    if (shouldShow()) showBtns();
+    else hideBtns();
+  }
+
+  /* 只清自定义卡片，不动按钮 */
+  function clearCustomCards() {
+    var olds = document.querySelectorAll('[data-custom-flow]');
+    for (var i = 0; i < olds.length; i++) if (olds[i].parentNode) olds[i].parentNode.removeChild(olds[i]);
+  }
+
+  /* ================= 监听路由与 DOM 变化 ================= */
+  var timer = null;
+  function schedule() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(refreshAll, 220);
+  }
+
+  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('hashchange', schedule);
+  window.addEventListener('popstate', schedule);
+
+  /* 备用轮询：路由切换不触发 mutation 时兜底 */
+  /* 持续守护：路由变了 / 搜索框清空了，立即收回按钮和卡片 */
+  setInterval(function () {
+    if (!isMyApplyPage()) {
+      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn')) hideBtns();
+      if (document.querySelector('[data-custom-flow]')) clearCustomCards();
+      return;
+    }
+    if (!shouldShow()) {
+      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn')) hideBtns();
+    } else if (!document.getElementById('__addFlowBtn')) {
+      refreshAll();
+    }
+  }, 400);
+
+  /* 调试出口 */
+  window.__AF = {
+    ver: 'v12',
+    pressBound: function () {
+      var c = findOriginalCard();
+      return c ? !!c.__afPressBound : 'no-card';
+    },
+    isUnlocked: function () { return unlocked; },
+    isDelMode: function () { return delMode; },
+    find: findOriginalCard,
+    tpl: findTemplateCard,
+    anchor: findListAnchor,
+    refresh: refreshAll,
+    setDelMode: function (v) { delMode = !!v; refreshAll(); return delMode; }
+  };
+
+  try {
+    var __m = document.createElement('div');
+    __m.id = '__addflow_loaded';
+    __m.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;overflow:hidden;opacity:.01;';
+    (document.body || document.documentElement).appendChild(__m);
+  } catch (e) {}
+
+  /* 不再跨页面持久化解锁：只有搜索框里存在 7878 时才生效 */
+
+  setTimeout(refreshAll, 700);
+})();
+</script>
+</body>
+</html>
