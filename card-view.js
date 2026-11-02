@@ -316,7 +316,7 @@
   </div>
   <div class="info-item">
     <div class="info-label"><span class="req">*</span>请假原因</div>
-    <div class="info-value">感冒发烧咽痛</div>
+    <div class="info-value" data-t="reason">感冒发烧咽痛</div>
   </div>
   <div class="info-item" style="border-bottom:none;">
     <div class="info-label">附件上传</div>
@@ -432,9 +432,13 @@
     var endT  = parseTime(end) || new Date();
     var durMs = parseDuration(cost);
     if (!durMs || durMs < 60000) durMs = 4 * 3600000;           /* 解析不出来按 4 小时兜底 */
-    var startT   = new Date(endT.getTime() - durMs);
+
+    /* 表单里填了真实开始时间就照用；老数据没有才用「完结 − 耗时」反推 */
+    var realStart = parseTime(item.start || '');
+    var startT   = realStart || new Date(endT.getTime() - durMs);
+    if (realStart && endT > realStart) durMs = endT.getTime() - realStart.getTime();
     var approveT = new Date(startT.getTime() + durMs * 0.65);   /* 班主任审批落在流程 65% 处 */
-    var days     = Math.max(1, Math.round(durMs / 86400000));
+    var days     = Math.max(1, Math.round((endT.getTime() - startT.getTime()) / 86400000));
 
     function setT(key, val) {
       body = body.replace(
@@ -450,6 +454,7 @@
     setT('approveTime', fmtS(approveT));   /* 审批意见区的时间 */
     setT('tlApply',     fmtS(startT));     /* 时间线：申请 */
     setT('tlApprove',   fmtS(approveT));   /* 时间线：班主任意见 */
+    if (item.reason) setT('reason', item.reason);   /* 请假原因：填了才覆盖 */
 
     /* 办理进度最后一步 */
     body = body.replace(
