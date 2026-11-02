@@ -51,11 +51,35 @@ TAIL = r'''</style>`;
 
 MID = r'''`;
 
-  /* ============ 字段替换 ============ */
+  /* ============ 时间推算 ============ */
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+
+  function parseTime(s) {
+    var m = /(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(String(s || ''));
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 9), +(m[5] || 0), +(m[6] || 0));
+  }
+
+  /* "2天" / "1天4小时" / "4小时" / "90分钟" 统一折成毫秒 */
+  function parseDuration(s) {
+    var t = String(s || '');
+    var ms = 0, hit = false;
+    var d  = /(\d+(?:\.\d+)?)\s*天/.exec(t);
+    if (d)  { ms += parseFloat(d[1])  * 86400000; hit = true; }
+    var h  = /(\d+(?:\.\d+)?)\s*(?:小时|时)/.exec(t);
+    if (h)  { ms += parseFloat(h[1])  * 3600000;  hit = true; }
+    var mi = /(\d+(?:\.\d+)?)\s*分/.exec(t);
+    if (mi) { ms += parseFloat(mi[1]) * 60000;    hit = true; }
+    return hit ? ms : 0;
+  }
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtD(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function fmtM(d) { return fmtD(d) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+  function fmtS(d) { return fmtM(d) + ':' + pad2(d.getSeconds()); }
 
   function buildHtml(item) {
     var name   = item.name   || '中职学生请假流程';
@@ -65,17 +89,30 @@ MID = r'''`;
 
     var body = CARD_BODY;
 
-    /* 请假结束时间 */
-    body = body.replace(
-      /(请假结束时间<\/div>\s*<div class="info-value">)[^<]*(<\/div>)/,
-      '$1' + esc(end) + '$2'
-    );
+    /* 用「完结时间 − 总耗时」反推申请时间，让整页时间自洽。
+       模板里原本 7 个日期全是写死的示例值（申请 10-31、审批 10-30、时间线只差 4 分钟），
+       跟卡片上的「总耗时 2天」完全对不上，这里全部按真实数据算。 */
+    var endT  = parseTime(end) || new Date();
+    var durMs = parseDuration(cost);
+    if (!durMs || durMs < 60000) durMs = 4 * 3600000;           /* 解析不出来按 4 小时兜底 */
+    var startT   = new Date(endT.getTime() - durMs);
+    var approveT = new Date(startT.getTime() + durMs * 0.65);   /* 班主任审批落在流程 65% 处 */
+    var days     = Math.max(1, Math.round(durMs / 86400000));
 
-    /* 请假天数 */
-    body = body.replace(
-      /(请假天数<\/div>\s*<div class="info-value">)[^<]*(<\/div>)/,
-      '$1' + esc(cost) + '$2'
-    );
+    function setT(key, val) {
+      body = body.replace(
+        new RegExp('(data-t="' + key + '">)[^<]*(<)', 'g'),
+        '$1' + esc(val) + '$2'
+      );
+    }
+
+    setT('applyTime',   fmtM(startT));     /* 申请时间 */
+    setT('leaveStart',  fmtD(startT));     /* 请假开始 = 申请当天 */
+    setT('leaveEnd',    fmtD(endT));       /* 请假结束 = 卡片上的完结时间 */
+    setT('leaveDays',   String(days));     /* 请假天数 = 总耗时折算 */
+    setT('approveTime', fmtS(approveT));   /* 审批意见区的时间 */
+    setT('tlApply',     fmtS(startT));     /* 时间线：申请 */
+    setT('tlApprove',   fmtS(approveT));   /* 时间线：班主任意见 */
 
     /* 办理进度最后一步 */
     body = body.replace(
