@@ -114,6 +114,12 @@ try {
   }
   try { hardClean(); } catch (e) {}
 
+  /* 原始那条示例记录（中职学生请假流程）默认隐藏，列表只留自己添加的卡片。
+     想让它回来：控制台执行 localStorage.removeItem('__deleted_flows_v1') 再刷新。 */
+  try {
+    if (localStorage.getItem(DELKEY) === null) localStorage.setItem(DELKEY, '1');
+  } catch (e) {}
+
   function getFlows() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function setFlows(a) { localStorage.setItem(KEY, JSON.stringify(a)); }
 
@@ -224,9 +230,22 @@ try {
 
   /* 真正的列表插入点：am-list-footer（「全部加载完毕」那一行） */
   function findListAnchor() {
-    /* 1) 优先用 antd-mobile 列表页脚 */
+    /* 1) 列表页脚：可能是「全部加载完毕」，也可能是「暂无数据」 */
     var foot = document.querySelector('.am-list-footer');
-    if (foot && (foot.textContent || '').indexOf('全部加载完毕') > -1) return foot;
+    if (foot) {
+      var ft = (foot.textContent || '');
+      if (ft.indexOf('全部加载完毕') > -1 || ft.indexOf('暂无数据') > -1) return foot;
+    }
+    /* 1b) 列表为空时页脚可能不存在，退到「暂无数据」提示节点 */
+    var emptyEl = null;
+    var scan0 = document.querySelectorAll('div,span,p');
+    for (var q = 0; q < scan0.length; q++) {
+      if ((scan0[q].textContent || '').trim() === '暂无数据' && scan0[q].children.length === 0) {
+        emptyEl = scan0[q];
+        break;
+      }
+    }
+    if (emptyEl) return emptyEl;
     /* 2) 兜底：任何文本恰为「全部加载完毕」的最内层节点 */
     var all = document.body.getElementsByTagName('*');
     for (var i = 0; i < all.length; i++) {
