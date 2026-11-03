@@ -515,7 +515,7 @@ try {
       var best = null;
       for (var i = 0; i < all.length; i++) {
         var txt = (all[i].textContent || '').replace(/\s+/g, '');
-        if (txt.indexOf('完结时间：') === -1 || txt.indexOf('总耗时：') === -1) continue;
+        if (!/(完结时间|总耗时|已耗时|申请时间|当前节点|申请结果)[：:]/.test(txt)) continue;
         if (txt.indexOf('事务分类') > -1 || txt.indexOf('当前共有') > -1) continue;
         if (!best || best.contains(all[i])) best = all[i];
       }
@@ -531,25 +531,47 @@ try {
   }
 
   /* 文本替换：只改三个字段行 + 标题，绝不触碰其它结构 */
-  function setCardText(card, name, end, cost, result) {
-    /* 1) 标题：只认 .title___1rZkC，找不到就找第一个 class 含 title 的元素 */
+  function setCardText(card, it) {
+    if (!card || !it) return;
+    var name = it.name || '中职学生请假流程';
+
+    /* 1) 标题 */
     var title = card.querySelector('.title___1rZkC') || card.querySelector('[class*="title"]');
     if (title) title.textContent = name;
 
-    /* 2) 三个字段行：只处理最内层、且直接持有「完结时间/总耗时/申请结果」文本的元素 */
+    /* 2) 已耗时 = 申请到现在（「审批中」的卡片显示这个）
+          总耗时 = 申请到结束（「已办结」的卡片显示这个）
+          两种卡片模板字段名不同，这里统一按字段名匹配，谁有就改谁 */
+    var elapsed = '';
+    var sT = parseDT(it.start || '');
+    if (sT) {
+      var ms = Date.now() - sT.getTime();
+      if (ms < 0) ms = 0;
+      elapsed = fmtDuration(ms);
+    }
+
+    var FIELDS = [
+      { k: '完结时间', v: it.end || '' },
+      { k: '总耗时',   v: it.cost || '' },
+      { k: '已耗时',   v: elapsed || it.cost || '' },
+      { k: '申请时间', v: it.start || '' },
+      { k: '当前节点', v: it.node || '班主任审批' },
+      { k: '申请结果', v: it.result || '已完成' }
+    ];
+
+    /* 3) 逐行替换：一个元素只认一个字段，避免误伤容器 */
     var rows = card.querySelectorAll('div,span,p');
-    for (var i = 0; i < rows.length; i++) {
-      var el = rows[i];
-      /* 必须有子元素（图标）或就是叶子节点，且不能是内容容器 */
+    for (var i2 = 0; i2 < rows.length; i2++) {
+      var el = rows[i2];
       var cls = el.className || '';
       if (cls.indexOf('content') > -1 || cls.indexOf('title') > -1) continue;
-      /* 跳过包含其它字段的容器（说明不是单行） */
+
       var inner = (el.textContent || '');
-      var hit = 0;
-      if (inner.indexOf('完结时间') > -1) hit++;
-      if (inner.indexOf('总耗时') > -1) hit++;
-      if (inner.indexOf('申请结果') > -1) hit++;
-      if (hit !== 1) continue;
+      var hit = 0, field = null;
+      for (var f = 0; f < FIELDS.length; f++) {
+        if (inner.indexOf(FIELDS[f].k) > -1) { hit++; field = FIELDS[f]; }
+      }
+      if (hit !== 1 || !field) continue;
 
       var direct = '';
       for (var n = 0; n < el.childNodes.length; n++) {
@@ -557,13 +579,11 @@ try {
       }
       if (!direct) continue;
 
-      var newText = null;
-      if (direct.indexOf('完结时间') > -1) newText = direct.replace(/(完结时间[：:]\s*).*/, '$1' + end);
-      else if (direct.indexOf('总耗时') > -1) newText = direct.replace(/(总耗时[：:]\s*).*/, '$1' + cost);
-      else if (direct.indexOf('申请结果') > -1) newText = direct.replace(/(申请结果[：:]\s*).*/, '$1' + result);
-      if (newText === null) continue;
+      var re = new RegExp('(' + field.k + '[：:]\\s*)[\\s\\S]*');
+      if (!re.test(direct)) continue;
+      var newText = direct.replace(re, '$1' + field.v);
 
-      /* 只删除文本节点，保留 img 图标 */
+      /* 只删文本节点，保留 img 图标 */
       for (var m = el.childNodes.length - 1; m >= 0; m--) {
         if (el.childNodes[m].nodeType === 3) el.removeChild(el.childNodes[m]);
       }
@@ -592,7 +612,7 @@ try {
       card.removeAttribute('data-orig-hidden');
       card.removeAttribute('data-orig-replaced');
       card.style.display = '';
-      setCardText(card, item.name || '中职学生请假流程', item.end || '', item.cost || '', item.result || '已完成');
+      setCardText(card, item);
     } else {
       card = document.createElement('div');
       card.style.cssText = 'position:relative;background:#fff;border-left:3px solid rgb(51,163,244);border-radius:3px;box-shadow:rgba(22,77,126,.1) 0 0 6px 0;padding:12px 15px;margin:0;box-sizing:border-box;cursor:pointer;';
@@ -959,7 +979,7 @@ try {
       if (it.closest('[data-custom-flow]')) continue;
       var txt = (it.textContent || '').replace(/\s+/g, '');
       if (!txt) continue;
-      var hasFields = txt.indexOf('完结时间') > -1 || txt.indexOf('总耗时') > -1;
+      var hasFields = /(完结时间|总耗时|已耗时|申请时间|当前节点|申请结果)[：:]/.test(txt);
       if (!hasFields) {
         try {
           localStorage.removeItem('__custom_flows_v1');
