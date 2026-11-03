@@ -337,15 +337,27 @@
     </div>
     <div class="form-item">
       <div class="form-label">学工部中职学生管理人员意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op2">情况属实，同意</div>
+        <div class="sub">王芳</div>
+        <div class="sub" data-t="op2Time">2026-10-30 14:20:11</div>
+      </div>
     </div>
     <div class="form-item">
       <div class="form-label">学工部负责人意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op3">同意，按规定办理</div>
+        <div class="sub">陈立</div>
+        <div class="sub" data-t="op3Time">2026-10-31 09:05:40</div>
+      </div>
     </div>
     <div class="form-item" style="border-bottom:none;">
       <div class="form-label">分管校长意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op4">同意</div>
+        <div class="sub">周建国</div>
+        <div class="sub" data-t="op4Time">2026-10-31 16:42:18</div>
+      </div>
     </div>
   </div>
 
@@ -366,7 +378,19 @@
         <div class="detail"><span>李永熙</span><span data-t="tlApprove">2026-10-30 10:10:46</span></div>
       </li>
       <li class="extra">
-        <div class="step-name">已结束</div>
+        <div class="step-name">学工部中职学生管理人员意见</div>
+        <div class="detail"><span>王芳</span><span data-t="tl2">2026-10-30 14:20:11</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name">学工部负责人意见</div>
+        <div class="detail"><span>陈立</span><span data-t="tl3">2026-10-31 09:05:40</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name">分管校长意见</div>
+        <div class="detail"><span>周建国</span><span data-t="tl4">2026-10-31 16:42:18</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name" data-t="endStep">已结束</div>
       </li>
     </ul>
     
@@ -379,12 +403,54 @@
     </div>
   </div>
 
-  
+  <script>
+    window.__detailScriptRan = true;
+    const btn = document.getElementById('btnCollapse');
+    const tl = document.querySelector('.timeline');
+    const dots = document.getElementById('dots');
+    const text = document.getElementById('collapseText');
+    btn.addEventListener('click', () => {
+      const expanded = tl.classList.toggle('expanded');
+      btn.classList.toggle('closed', !expanded);
+      text.textContent = expanded ? '收起' : '展开';
+      dots.style.display = expanded ? 'none' : 'flex';
+    });
+  </script>
+
 
   <div class="footer">
-    <button class="btn-circulate">传阅</button>
+    <button class="btn-circulate" id="btnCirculate">传阅</button>
     <div class="home-indicator"></div>
   </div>
+
+  <script>
+    /* 传阅 / 办理：给个明确反馈，避免点了像没反应 */
+    function detailToast(msg) {
+      var t = document.getElementById('__dtToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = '__dtToast';
+        t.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
+          'background:rgba(0,0,0,.78);color:#fff;font-size:14px;padding:11px 22px;' +
+          'border-radius:8px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .18s;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t.__timer);
+      t.__timer = setTimeout(function () { t.style.opacity = '0'; }, 1500);
+    }
+    var circ = document.getElementById('btnCirculate');
+    if (circ) circ.addEventListener('click', function () { detailToast('已发起传阅'); });
+    var handles = document.querySelectorAll('.handle');
+    for (var hi = 0; hi < handles.length; hi++) {
+      handles[hi].addEventListener('click', function (e) {
+        e.preventDefault();
+        detailToast('离线演示版，办理需连接服务器');
+      });
+    }
+  </script>
+
 
 `;
 
@@ -437,7 +503,11 @@
     var realStart = parseTime(item.start || '');
     var startT   = realStart || new Date(endT.getTime() - durMs);
     if (realStart && endT > realStart) durMs = endT.getTime() - realStart.getTime();
-    var approveT = new Date(startT.getTime() + durMs * 0.65);   /* 班主任审批落在流程 65% 处 */
+    /* 四级审批按流程进度分布：班主任 20% / 学工部管理员 45% / 学工部负责人 70% / 分管校长 95% */
+    var approveT = new Date(startT.getTime() + durMs * 0.20);
+    var t2 = new Date(startT.getTime() + durMs * 0.45);
+    var t3 = new Date(startT.getTime() + durMs * 0.70);
+    var t4 = new Date(startT.getTime() + durMs * 0.95);
     var days     = Math.max(1, Math.round((endT.getTime() - startT.getTime()) / 86400000));
 
     function setT(key, val) {
@@ -454,13 +524,15 @@
     setT('approveTime', fmtS(approveT));   /* 审批意见区的时间 */
     setT('tlApply',     fmtS(startT));     /* 时间线：申请 */
     setT('tlApprove',   fmtS(approveT));   /* 时间线：班主任意见 */
-    if (item.reason) setT('reason', item.reason);   /* 请假原因：填了才覆盖 */
+    setT('tl2', fmtS(t2)); setT('op2Time', fmtS(t2));   /* 学工部中职学生管理人员 */
+    setT('tl3', fmtS(t3)); setT('op3Time', fmtS(t3));   /* 学工部负责人 */
+    setT('tl4', fmtS(t4)); setT('op4Time', fmtS(t4));   /* 分管校长 */
+    if (item.reason) setT('reason', item.reason);       /* 请假原因：填了才覆盖 */
+    if (result === '已驳回') setT('op4', '不同意');      /* 驳回时最后一级改为不同意 */
 
-    /* 办理进度最后一步 */
-    body = body.replace(
-      /(<li class="extra">\s*<div class="step-name">)[^<]*(<\/div>)/,
-      '$1' + esc(result) + '$2'
-    );
+    /* 办理进度最后一步：用专属 data-t 精确替换，
+       不能再用「第一个 li.extra」那种写法 —— 前面还有三级审批的 extra 节点 */
+    setT('endStep', result);
 
     /* 卡片 ID 徽标（插在蓝色状态条右边） */
     var cid = (item.cardNo != null && item.cardNo !== '') ? item.cardNo
