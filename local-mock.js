@@ -23,42 +23,11 @@
     accessToken: 'mock-token-123456'
   };
 
-  /* 审批中：给一条示例，方便直接看到卡片；不想要清空即可 */
-  var CURRENT_LIST = [
-    {
-      orunid: 'UsJnW2q03C7BijSAMbKmj',
-      subject: '中职学生请假流程',
-      processName: '中职学生请假流程',
-      createTime: '2026-11-02 09:20',
-      endTime: '2026-11-04 18:00',
-      totalCost: '2天',
-      currentNodeName: '班主任审批',
-      status: 'CURRENT',
-      followStatus: '0',
-      processId: 'PROC001',
-      transactionId: 'TX002',
-      author: '511321200902288919',
-      url: 'detail.html'
-    }
-  ];
+  /* 审批中：不放示例卡，列表只显示自己添加的记录 */
+  var CURRENT_LIST = [];
 
-  var ARC_LIST = [
-    {
-      orunid: 'UsJnW2q03C7BijSAMbKmj',
-      subject: '中职学生请假流程',
-      processName: '中职学生请假流程',
-      createTime: '2026-11-01 10:30',
-      endTime: '2026-11-02 15:00',
-      totalCost: '1天4小时',
-      currentNodeName: '已完成',
-      status: 'ARC',
-      followStatus: '0',
-      processId: 'PROC001',
-      transactionId: 'TX001',
-      author: '511321200902288919',
-      url: 'detail.html'
-    }
-  ];
+  /* 已办结：同样不放示例卡 */
+  var ARC_LIST = [];
 
   var DEPARTMENTS = [
     { id: '3', name: '南充卫生职业学院' },
