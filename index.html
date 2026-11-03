@@ -97,6 +97,7 @@ try {
   var delMode = false;
   var addBtn = null;
   var delBtn = null;
+  var clearBtn = null;
 
   /* ---- 原卡片三个内嵌 PNG 图标（从页面实测抓取，颜色 rgb(166,167,172)）---- */
   var ICON_CAL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAbBAMAAACdJvIfAAAAHlBMVEUAAACgp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6ygp6z+gkVmAAAACXRSTlMA8cStJ8M8JTu+5aEWAAAAXElEQVQY02MAAs6ZIHLmBCBBgMtuOBMOhAsYHGciAREGS2TuZAbJaQi9mROBJIQLZWByYQDMRQb4ueh6CXM1Z05lABFw7iQGEEFdvSDvw0HnRLTAQQ86FuSAdQAA5It1c4lH85sAAAAASUVORK5CYII=';
@@ -105,7 +106,7 @@ try {
 
   /* 启动即硬清理：清掉任何上一版残留的按钮与卡片 */
   function hardClean() {
-    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn, [data-custom-flow]');
+    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn, #__clearFlowBtn, [data-custom-flow]');
     for (var i = 0; i < xs.length; i++) {
       if (xs[i].parentNode) xs[i].parentNode.removeChild(xs[i]);
     }
@@ -189,7 +190,7 @@ try {
       addBtn.textContent = '＋ 添加请假流程';
       addBtn.onclick = function () { openForm(null); };
     }
-    addBtn.style.cssText = 'position:fixed;right:18px;bottom:118px;background:#4A79EF;color:#fff;padding:12px 18px;border-radius:24px;box-shadow:0 4px 14px rgba(74,121,239,.45);font-size:15px;z-index:9999;cursor:pointer;user-select:none;';
+    addBtn.style.cssText = 'position:fixed;right:18px;bottom:174px;background:#4A79EF;color:#fff;padding:12px 18px;border-radius:24px;box-shadow:0 4px 14px rgba(74,121,239,.45);font-size:15px;z-index:9999;cursor:pointer;user-select:none;';
     if (!addBtn.parentNode) document.body.appendChild(addBtn);
 
     if (!delBtn) {
@@ -197,21 +198,52 @@ try {
       delBtn.id = '__delFlowBtn';
       delBtn.onclick = function () { toggleDelMode(); };
     }
-    delBtn.style.cssText = 'position:fixed;right:18px;bottom:70px;padding:12px 18px;border-radius:24px;font-size:15px;z-index:9999;cursor:pointer;user-select:none;color:#fff;box-shadow:0 4px 14px rgba(242,86,75,.45);background:' + (delMode ? '#7A8B99' : '#F2564B') + ';';
+    delBtn.style.cssText = 'position:fixed;right:18px;bottom:126px;padding:12px 18px;border-radius:24px;font-size:15px;z-index:9999;cursor:pointer;user-select:none;color:#fff;box-shadow:0 4px 14px rgba(242,86,75,.45);background:' + (delMode ? '#7A8B99' : '#F2564B') + ';';
     delBtn.textContent = delMode ? '✓ 完成删除' : '－ 删除请假流程';
     if (!delBtn.parentNode) document.body.appendChild(delBtn);
+
+    /* 清空全部：一次删掉自己加的所有记录 */
+    if (!clearBtn) {
+      clearBtn = document.createElement('div');
+      clearBtn.id = '__clearFlowBtn';
+      clearBtn.onclick = function () { clearAllFlows(); };
+    }
+    clearBtn.style.cssText = 'position:fixed;right:18px;bottom:78px;padding:12px 18px;border-radius:24px;font-size:15px;z-index:9999;cursor:pointer;user-select:none;color:#fff;box-shadow:0 4px 14px rgba(122,139,153,.4);background:#7A8B99;';
+    clearBtn.textContent = '🗑 清空全部';
+    if (!clearBtn.parentNode) document.body.appendChild(clearBtn);
+  }
+
+  /* 清空自己加的全部请假记录 */
+  function clearAllFlows() {
+    var n = 0;
+    try {
+      var arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+      n = arr.length || 0;
+    } catch (e) {}
+    if (!window.confirm('确定清空全部 ' + n + ' 条请假记录？\n清空后不可恢复。')) return;
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(ORIG_KEY);
+      localStorage.setItem(DELKEY, '1');   /* 原始示例卡保持隐藏 */
+      sessionStorage.removeItem('__unlocked_v1');
+    } catch (e) {}
+    if (delMode) { delMode = false; }
+    refreshAll();
+    toast('已清空全部记录');
   }
 
   function hideBtns() {
     if (addBtn && addBtn.parentNode) addBtn.style.display = 'none';
     if (delBtn && delBtn.parentNode) delBtn.style.display = 'none';
+    if (clearBtn && clearBtn.parentNode) clearBtn.style.display = 'none';
     /* 彻底移除：兜底清掉页面上任何残留的同 id 节点 */
-    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn');
+    var xs = document.querySelectorAll('#__addFlowBtn, #__delFlowBtn, #__clearFlowBtn');
     for (var i = 0; i < xs.length; i++) {
       if (xs[i].parentNode) xs[i].parentNode.removeChild(xs[i]);
     }
     addBtn = null;
     delBtn = null;
+    clearBtn = null;
   }
 
   function toggleDelMode() {
@@ -508,7 +540,15 @@ try {
 
   /* 找到第一张真实卡片的最外层包装（含 am-swipe 与左右 12px 留白的那层） */
   function findTemplateCard() {
-    var card = document.querySelector('.item___2s84I');
+    /* 只用接口返回的真实卡片当模板：自定义卡的克隆体里也有 .item___2s84I，
+       但它带着上一条记录的数值，克隆出来会导致新卡沿用旧数据 */
+    var card = null;
+    var tpls = document.querySelectorAll('.item___2s84I');
+    for (var ti = 0; ti < tpls.length; ti++) {
+      if (tpls[ti].closest('[data-custom-flow]')) continue;
+      card = tpls[ti];
+      break;
+    }
     if (!card) {
       /* 兜底：按文本找最内层卡片 */
       var all = document.querySelectorAll('div');
@@ -622,7 +662,25 @@ try {
       card.appendChild(t0);
       var c0 = document.createElement('div');
       c0.style.cssText = 'margin:8px 0 0;font-size:12px;color:rgb(120,120,120);line-height:24px;';
-      c0.innerHTML = '完结时间：' + (item.end || '') + '<br>总耗时：' + (item.cost || '') + '<br>申请结果：' + (item.result || '已完成');
+      /* 没有模板可克隆时（比如示例卡被清空了），按当前 tab 生成对应字段：
+         「审批中」显示 已耗时 / 申请时间 / 当前节点，「已办结」显示 完结时间 / 总耗时 / 申请结果 */
+      var isPendingPage = location.hash.indexOf('tabStatus=ARC') === -1;
+      if (isPendingPage) {
+        var el2 = '';
+        var s2 = parseDT(item.start || '');
+        if (s2) {
+          var ms2 = Date.now() - s2.getTime();
+          if (ms2 < 0) ms2 = 0;
+          el2 = fmtDuration(ms2);
+        }
+        c0.innerHTML = '已耗时：' + (el2 || item.cost || '') +
+          '<br>申请时间：' + (item.start || '') +
+          '<br>当前节点：' + (item.node || '班主任审批');
+      } else {
+        c0.innerHTML = '完结时间：' + (item.end || '') +
+          '<br>总耗时：' + (item.cost || '') +
+          '<br>申请结果：' + (item.result || '已完成');
+      }
       card.appendChild(c0);
     }
 
@@ -1038,12 +1096,12 @@ try {
   /* 持续守护：路由变了 / 搜索框清空了，立即收回按钮和卡片 */
   setInterval(function () {
     if (!isMyApplyPage()) {
-      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn')) hideBtns();
+      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn') || document.getElementById('__clearFlowBtn')) hideBtns();
       if (document.querySelector('[data-custom-flow]')) clearCustomCards();
       return;
     }
     if (!shouldShow()) {
-      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn')) hideBtns();
+      if (document.getElementById('__addFlowBtn') || document.getElementById('__delFlowBtn') || document.getElementById('__clearFlowBtn')) hideBtns();
     } else if (!document.getElementById('__addFlowBtn')) {
       refreshAll();
     }
