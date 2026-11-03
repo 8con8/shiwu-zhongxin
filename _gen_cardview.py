@@ -26,7 +26,9 @@ def strip_script(b):
     return re.sub(r'<script>.*?</script>', '', b, flags=re.S)
 
 
-body = strip_script(body)
+# 注意：不要把 <script> 剥掉 —— 详情页的「展开 / 收起」绑定就在里面，
+# 剥掉之后 btnCollapse 只是个空 div，点了没反应。
+# body = strip_script(body)
 
 HEAD = r'''/*!
  * card-view.js — 卡片详情页（页内浮层，纯静态可用）
@@ -100,7 +102,11 @@ MID = r'''`;
     var realStart = parseTime(item.start || '');
     var startT   = realStart || new Date(endT.getTime() - durMs);
     if (realStart && endT > realStart) durMs = endT.getTime() - realStart.getTime();
-    var approveT = new Date(startT.getTime() + durMs * 0.65);   /* 班主任审批落在流程 65% 处 */
+    /* 四级审批按流程进度分布：班主任 20% / 学工部管理员 45% / 学工部负责人 70% / 分管校长 95% */
+    var approveT = new Date(startT.getTime() + durMs * 0.20);
+    var t2 = new Date(startT.getTime() + durMs * 0.45);
+    var t3 = new Date(startT.getTime() + durMs * 0.70);
+    var t4 = new Date(startT.getTime() + durMs * 0.95);
     var days     = Math.max(1, Math.round((endT.getTime() - startT.getTime()) / 86400000));
 
     function setT(key, val) {
@@ -117,13 +123,15 @@ MID = r'''`;
     setT('approveTime', fmtS(approveT));   /* 审批意见区的时间 */
     setT('tlApply',     fmtS(startT));     /* 时间线：申请 */
     setT('tlApprove',   fmtS(approveT));   /* 时间线：班主任意见 */
-    if (item.reason) setT('reason', item.reason);   /* 请假原因：填了才覆盖 */
+    setT('tl2', fmtS(t2)); setT('op2Time', fmtS(t2));   /* 学工部中职学生管理人员 */
+    setT('tl3', fmtS(t3)); setT('op3Time', fmtS(t3));   /* 学工部负责人 */
+    setT('tl4', fmtS(t4)); setT('op4Time', fmtS(t4));   /* 分管校长 */
+    if (item.reason) setT('reason', item.reason);       /* 请假原因：填了才覆盖 */
+    if (result === '已驳回') setT('op4', '不同意');      /* 驳回时最后一级改为不同意 */
 
-    /* 办理进度最后一步 */
-    body = body.replace(
-      /(<li class="extra">\s*<div class="step-name">)[^<]*(<\/div>)/,
-      '$1' + esc(result) + '$2'
-    );
+    /* 办理进度最后一步：用专属 data-t 精确替换，
+       不能再用「第一个 li.extra」那种写法 —— 前面还有三级审批的 extra 节点 */
+    setT('endStep', result);
 
     /* 卡片 ID 徽标（插在蓝色状态条右边） */
     var cid = (item.cardNo != null && item.cardNo !== '') ? item.cardNo
