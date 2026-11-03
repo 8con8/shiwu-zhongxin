@@ -328,15 +328,27 @@
     </div>
     <div class="form-item">
       <div class="form-label">学工部中职学生管理人员意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op2">情况属实，同意</div>
+        <div class="sub">王芳</div>
+        <div class="sub" data-t="op2Time">2026-10-30 14:20:11</div>
+      </div>
     </div>
     <div class="form-item">
       <div class="form-label">学工部负责人意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op3">同意，按规定办理</div>
+        <div class="sub">陈立</div>
+        <div class="sub" data-t="op3Time">2026-10-31 09:05:40</div>
+      </div>
     </div>
     <div class="form-item" style="border-bottom:none;">
       <div class="form-label">分管校长意见</div>
-      <div class="form-content"></div>
+      <div class="form-content">
+        <div data-t="op4">同意</div>
+        <div class="sub">周建国</div>
+        <div class="sub" data-t="op4Time">2026-10-31 16:42:18</div>
+      </div>
     </div>
   </div>
 
@@ -357,7 +369,19 @@
         <div class="detail"><span>李永熙</span><span data-t="tlApprove">2026-10-30 10:10:46</span></div>
       </li>
       <li class="extra">
-        <div class="step-name">已结束</div>
+        <div class="step-name">学工部中职学生管理人员意见</div>
+        <div class="detail"><span>王芳</span><span data-t="tl2">2026-10-30 14:20:11</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name">学工部负责人意见</div>
+        <div class="detail"><span>陈立</span><span data-t="tl3">2026-10-31 09:05:40</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name">分管校长意见</div>
+        <div class="detail"><span>周建国</span><span data-t="tl4">2026-10-31 16:42:18</span></div>
+      </li>
+      <li class="extra">
+        <div class="step-name" data-t="endStep">已结束</div>
       </li>
     </ul>
     
@@ -371,6 +395,7 @@
   </div>
 
   <script>
+    window.__detailScriptRan = true;
     const btn = document.getElementById('btnCollapse');
     const tl = document.querySelector('.timeline');
     const dots = document.getElementById('dots');
@@ -383,10 +408,40 @@
     });
   </script>
 
+
   <div class="footer">
-    <button class="btn-circulate">传阅</button>
+    <button class="btn-circulate" id="btnCirculate">传阅</button>
     <div class="home-indicator"></div>
   </div>
+
+  <script>
+    /* 传阅 / 办理：给个明确反馈，避免点了像没反应 */
+    function detailToast(msg) {
+      var t = document.getElementById('__dtToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = '__dtToast';
+        t.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
+          'background:rgba(0,0,0,.78);color:#fff;font-size:14px;padding:11px 22px;' +
+          'border-radius:8px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .18s;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t.__timer);
+      t.__timer = setTimeout(function () { t.style.opacity = '0'; }, 1500);
+    }
+    var circ = document.getElementById('btnCirculate');
+    if (circ) circ.addEventListener('click', function () { detailToast('已发起传阅'); });
+    var handles = document.querySelectorAll('.handle');
+    for (var hi = 0; hi < handles.length; hi++) {
+      handles[hi].addEventListener('click', function (e) {
+        e.preventDefault();
+        detailToast('离线演示版，办理需连接服务器');
+      });
+    }
+  </script>
+
 
 </body>
 </html>
