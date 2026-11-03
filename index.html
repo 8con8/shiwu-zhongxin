@@ -586,8 +586,9 @@ try {
     var sT = parseDT(it.start || '');
     if (sT) {
       var ms = Date.now() - sT.getTime();
-      if (ms < 0) ms = 0;
-      elapsed = fmtDuration(ms);
+      if (ms < 0) elapsed = '未开始';            /* 开始时间还没到 */
+      else if (ms < 60000) elapsed = '刚刚';     /* 刚提交 */
+      else elapsed = fmtDuration(ms);
     }
 
     var FIELDS = [
@@ -670,8 +671,9 @@ try {
         var s2 = parseDT(item.start || '');
         if (s2) {
           var ms2 = Date.now() - s2.getTime();
-          if (ms2 < 0) ms2 = 0;
-          el2 = fmtDuration(ms2);
+          if (ms2 < 0) el2 = '未开始';
+          else if (ms2 < 60000) el2 = '刚刚';
+          else el2 = fmtDuration(ms2);
         }
         c0.innerHTML = '已耗时：' + (el2 || item.cost || '') +
           '<br>申请时间：' + (item.start || '') +
